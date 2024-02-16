@@ -10,7 +10,7 @@ def can_init():
 
     os.system('sudo ifconfig can1 down')
     os.system('sudo ifconfig can1 txqueuelen 1000')
-    os.system('sudo ip link set can1 type can bitrate 250000')
+    os.system('sudo ip link set can1 type can bitrate 500000')
     os.system('sudo ifconfig can1 up')
 
 def can_fini():
@@ -81,16 +81,9 @@ print(response1)
 psu_bus.send(psu_status_message)
 response2 = psu_bus.recv(1.5)
 print(response2)
-
-# Attendi un breve periodo di tempo per assicurarti che il messaggio venga inviato
-time.sleep(0.5)
-
-# response = psu_bus.recv(1.5)  # Imposta un timeout di 3 secondi
-# # os.system('candump can0')
-# print(response)
+time.sleep(0.5) # Attendi un breve periodo di tempo per assicurarti che il messaggio venga inviato
 
 # # Chiudi la connessione CAN
 psu_bus.shutdown()
-
 can_fini()
 
