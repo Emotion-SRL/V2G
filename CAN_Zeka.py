@@ -1,6 +1,8 @@
-import can
-import time
 import os
+import time
+
+import can
+
 
 def can_init():
     os.system('sudo ifconfig can0 down')
@@ -13,31 +15,35 @@ def can_init():
     os.system('sudo ip link set can1 type can bitrate 500000')
     os.system('sudo ifconfig can1 up')
 
+
 def can_fini():
     os.system('sudo ifconfig can0 down')
     os.system('sudo ifconfig can1 down')
-    
+
+
 def byte_to_temperature(high_byte, low_byte):
     # Combinare i byte per ottenere il valore a 16 bit
     value = (high_byte << 8) | low_byte
-    
+
     # Moltiplicare per 0.1 per ottenere la temperatura in gradi Celsius
     temperature = round(value * 0.1, 1)
-    
+
     return temperature
+
 
 def bytes_to_temperature(feedback_array):
     # Estrai i penultimi due byte
     high_byte = feedback_array[-2]
     low_byte = feedback_array[-1]
-    
+
     # Combinare i byte per ottenere il valore a 16 bit
     value = (high_byte << 8) | low_byte
-    
+
     # Moltiplicare per 0.1 per ottenere la temperatura in gradi Celsius
     temperature = round(value * 0.1, 2)
-    
+
     return temperature
+
 
 def boost_1Q_voltage_control(voltage, current):
     # Calcola i byte per la tensione
@@ -52,7 +58,7 @@ def boost_1Q_voltage_control(voltage, current):
 
     # Crea il messaggio da inviare sul bus CAN
     command = [0x83, voltage_high_byte, voltage_low_byte, current_high_byte, current_low_byte, 0x00, 0x00, 0x00]
-    
+
     return command
 
 
@@ -66,33 +72,33 @@ evi_can_interface = 'socketcan'
 evi_can_channel = 'can1'
 evi_baud_rate = 500000
 
-psu_bus = can.interface.Bus(channel = psu_can_channel, bustype = psu_can_interface, bitrate = psu_baud_rate)
-evi_bus = can.interface.Bus(channel = evi_can_channel, bustype = evi_can_interface, bitrate = evi_baud_rate)
+psu_bus = can.interface.Bus(channel=psu_can_channel, bustype=psu_can_interface, bitrate=psu_baud_rate)
+evi_bus = can.interface.Bus(channel=evi_can_channel, bustype=evi_can_interface, bitrate=evi_baud_rate)
 
-psu_master_node_id = 0x001 #Master ID con cui scrivere al device come Master della comunicazione CAN
+psu_master_node_id = 0x001  # Master ID con cui scrivere al device come Master della comunicazione CAN
 psu_slave_node_id = 0x004  # Slave ID con cui risonde il device
 psu_device_ID = 0x1
-psu_control_packet_id = 0x1  # ID del pacchetto control = 1 status = 4 
-psu_status_packet_id = 0x4  # ID del pacchetto control = 1 status = 4 
+psu_control_packet_id = 0x1  # ID del pacchetto control = 1 status = 4
+psu_status_packet_id = 0x4  # ID del pacchetto control = 1 status = 4
 
 psu_control_message_id = (psu_master_node_id << 8) | (psu_device_ID << 3) | psu_control_packet_id
 psu_status_message_id = (psu_master_node_id << 8) | (psu_device_ID << 3) | psu_status_packet_id
 
-evi_master_node_id = 0x001 #Master ID con cui scrivere al device come Master della comunicazione CAN
+evi_master_node_id = 0x001  # Master ID con cui scrivere al device come Master della comunicazione CAN
 evi_slave_node_id = 0x004  # Slave ID con cui risonde il device
 evi_device_ID = 0x1
-evi_control_packet_id = 0x1  # ID del pacchetto control = 1 status = 4 
-evi_status_packet_id = 0x4  # ID del pacchetto control = 1 status = 4 
- 
+evi_control_packet_id = 0x1  # ID del pacchetto control = 1 status = 4
+evi_status_packet_id = 0x4  # ID del pacchetto control = 1 status = 4
+
 evi_control_message_id = (evi_master_node_id << 8) | (evi_device_ID << 3) | evi_control_packet_id
 evi_status_message_id = (evi_master_node_id << 8) | (evi_device_ID << 3) | evi_status_packet_id
 
-# Status registers 0xA0 >>> 0xA4 
-Main_Status_Request = [0xA0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  
-Feedback_1_Status_Request = [0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  
-Feedback_2_Status_Request = [0xA2, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  
-Error_Status_Request = [0xA3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  
-IOs_Status_Request = [0xA4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  
+# Status registers 0xA0 >>> 0xA4
+Main_Status_Request = [0xA0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+Feedback_1_Status_Request = [0xA1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+Feedback_2_Status_Request = [0xA2, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+Error_Status_Request = [0xA3, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+IOs_Status_Request = [0xA4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 
 
 # Control registers 0x80 >>> 0x90
@@ -134,8 +140,6 @@ try:
     psu_bus.send(psu_setup_message)
     time.sleep(0.2)
     psu_bus.send(psu_voltage_control_message)
-    
-    
 
     while True:
         psu_bus.send(psu_status_message)
@@ -144,13 +148,12 @@ try:
         high_byte = int(data[-6:-4], 16)
         low_byte = int(data[-4:-2], 16)
 
-        temperatura = byte_to_temperature(high_byte,low_byte)
+        temperatura = byte_to_temperature(high_byte, low_byte)
         print("La temperatura è:", temperatura, "°C")
         # print(data,high_byte,low_byte)
-        time.sleep(0.5)    
-except KeyboardInterrupt:    
+        time.sleep(0.5)
+except KeyboardInterrupt:
     # # Chiudi la connessione CAN
     psu_bus.shutdown()
     evi_bus.shutdown()
     can_fini()
-
