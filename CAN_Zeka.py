@@ -4,7 +4,7 @@ import time
 
 import can
 
-from zeka_control import assemble_main_control_command
+from zeka_control import assemble_main_control_command, assemble_buck_1q_voltage_control_reference_command
 from zeka_status import (
     feedback_2_status_request,
     human_readable_feedback_2_status_response,
@@ -68,17 +68,25 @@ def thread_safe_BLG_CAN_request_response_cycle(request):
     with psu_lock:
         psu_bus.send(request)
         response = psu_bus.recv(1)
-    return response
+    if response is None:
+        return None
+    else:
+        return response.data
 
 
 def initialize_BLG():
     data_bytes = assemble_main_control_command(
-        precharge_delay=False,
-        reset_faults=False,
+        precharge_delay=True,
+        reset_faults=True,
         full_stop=False,
         run_device=False,
-        set_device_mode="No mode selected"
+        set_device_mode="Buck 1Q voltage control mode"
     )
+    message = can.Message(arbitration_id=psu_control_message_id, data=data_bytes, is_extended_id=False)
+    response = thread_safe_BLG_CAN_request_response_cycle(message)
+    if response is None:
+        print("errore")
+    data_bytes = assemble_buck_1q_voltage_control_reference_command(voltage_reference=50, current_limit=1)
     message = can.Message(arbitration_id=psu_control_message_id, data=data_bytes, is_extended_id=False)
     thread_safe_BLG_CAN_request_response_cycle(message)
 
