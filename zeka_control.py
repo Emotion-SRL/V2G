@@ -2,8 +2,11 @@
 
 def convert_to_UWORD(value, scale_factor=0.1):
     both_bytes = int(value / scale_factor)
+    if both_bytes > 0xFFFF:
+        print("In CONVERTING_TO_UWORD: Value too high, setting to 0xFFFF")
+        both_bytes = 0xFFFF
     high_byte = (both_bytes >> 8) & 0xFF
-    low_byte = high_byte & 0xFF
+    low_byte = both_bytes & 0xFF
     return high_byte, low_byte
 
 
@@ -44,45 +47,45 @@ def assemble_main_control_command(precharge_delay=False, reset_faults=False, ful
 
 
 def assemble_buck_1q_voltage_control_reference_command(voltage_reference=0, current_limit=0):
-    VBCK1, VBCK0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
-    IBCK1, IBCK0 = convert_to_UWORD(value=current_limit, scale_factor=0.1)  # UWORD in 0.1A
-    return [0x81, VBCK1, VBCK0, IBCK1, IBCK0, 0xFF, 0xFF, 0xFF]
+    VBCK_1, VBCK_0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
+    IBCK_1, IBCK_0 = convert_to_UWORD(value=current_limit, scale_factor=0.1)  # UWORD in 0.1A
+    return [0x81, VBCK_1, VBCK_0, IBCK_1, IBCK_0, 0xFF, 0xFF, 0xFF]
 
 
 def assemble_buck_1q_current_control_reference_command(current_reference=0):
-    IBCK1, IBCK0 = convert_to_UWORD(value=current_reference, scale_factor=0.1)  # UWORD in 0.1V
-    return [0x82, IBCK1, IBCK0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+    IBCK_1, IBCK_0 = convert_to_UWORD(value=current_reference, scale_factor=0.1)  # UWORD in 0.1V
+    return [0x82, IBCK_1, IBCK_0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
 
 
 def assemble_boost_1q_voltage_control_reference_command(voltage_reference=0, current_limit=0):
-    VBST1, VBST0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
-    IBST1, IBST0 = convert_to_UWORD(value=current_limit, scale_factor=0.1)  # UWORD in 0.1A
-    return [0x83, VBST1, VBST0, IBST1, IBST0, 0xFF, 0xFF, 0xFF]
+    VBST_1, VBST_0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
+    IBST_1, IBST_0 = convert_to_UWORD(value=current_limit, scale_factor=0.1)  # UWORD in 0.1A
+    return [0x83, VBST_1, VBST_0, IBST_1, IBST_0, 0xFF, 0xFF, 0xFF]
 
 
 def assemble_boost_1q_current_control_reference_command(current_reference=0):
-    IBST1, IBST0 = convert_to_UWORD(value=current_reference, scale_factor=0.1)  # UWORD in 0.1V
-    return [0x84, IBST1, IBST0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+    IBST_1, IBST_0 = convert_to_UWORD(value=current_reference, scale_factor=0.1)  # UWORD in 0.1V
+    return [0x84, IBST_1, IBST_0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
 
 
 def assemble_buck_2q_voltage_control_reference_command(voltage_reference=0, current_limit_to_side_A=0, current_limit_to_side_B=0):
-    VBK2Q1, VBK2Q0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
-    IBK2QA1, IBK2QA0 = convert_to_UWORD(value=current_limit_to_side_A, scale_factor=0.1)  # UWORD in 0.1A, to side A (Battery)
-    IBK2QB1, IBK2QB0 = convert_to_UWORD(value=current_limit_to_side_B, scale_factor=0.1)  # UWORD in 0.1A, to side B (DC-Link)
-    return [0x85, VBK2Q1, VBK2Q0, IBK2QA1, IBK2QA0, IBK2QB1, IBK2QB0, 0xFF]
+    VBK2Q_1, VBK2Q_0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
+    IBK2QA_1, IBK2QA_0 = convert_to_UWORD(value=current_limit_to_side_A, scale_factor=0.1)  # UWORD in 0.1A, to side A (Battery)
+    IBK2QB_1, IBK2QB_0 = convert_to_UWORD(value=current_limit_to_side_B, scale_factor=0.1)  # UWORD in 0.1A, to side B (DC-Link)
+    return [0x85, VBK2Q_1, VBK2Q_0, IBK2QA_1, IBK2QA_0, IBK2QB_1, IBK2QB_0, 0xFF]
 
 
 def assemble_boost_2q_voltage_control_reference_command(voltage_reference=0, current_limit_to_side_A=0, current_limit_to_side_B=0):
-    VBS2Q1, VBS2Q0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
-    IBS2QA1, IBS2QA0 = convert_to_UWORD(value=current_limit_to_side_A, scale_factor=0.1)  # UWORD in 0.1A, to side A (Battery)
-    IBS2QB1, IBS2QB0 = convert_to_UWORD(value=current_limit_to_side_B, scale_factor=0.1)  # UWORD in 0.1A, to side B (DC-Link)
-    return [0x86, VBS2Q1, VBS2Q0, IBS2QA1, IBS2QA0, IBS2QB1, IBS2QB0, 0xFF]
+    VBS2Q_1, VBS2Q_0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
+    IBS2QA_1, IBS2QA_0 = convert_to_UWORD(value=current_limit_to_side_A, scale_factor=0.1)  # UWORD in 0.1A, to side A (Battery)
+    IBS2QB_1, IBS2QB_0 = convert_to_UWORD(value=current_limit_to_side_B, scale_factor=0.1)  # UWORD in 0.1A, to side B (DC-Link)
+    return [0x86, VBS2Q_1, VBS2Q_0, IBS2QA_1, IBS2QA_0, IBS2QB_1, IBS2QB_0, 0xFF]
 
 
 def assemble_boost_A_current_B_voltage_control_reference_command(voltage_reference=0, current_limit=0):
-    VBST1, VBST0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
-    IBST1, IBST0 = convert_to_UWORD(value=current_limit, scale_factor=0.1)  # UWORD in 0.1A
-    return [0x8B, VBST1, VBST0, IBST1, IBST0, 0xFF, 0xFF, 0xFF]
+    VBST_1, VBST_0 = convert_to_UWORD(value=voltage_reference, scale_factor=0.1)  # UWORD in 0.1V
+    IBST_1, IBST_0 = convert_to_UWORD(value=current_limit, scale_factor=0.1)  # UWORD in 0.1A
+    return [0x8B, VBST_1, VBST_0, IBST_1, IBST_0, 0xFF, 0xFF, 0xFF]
 
 
 def assemble_output_control_command(user_relay_4=False, user_relay_3=False, user_digital_output_8=False, user_digital_output_7=False, user_digital_output_6=False, user_digital_output_5=False, user_digital_output_4=False, user_digital_output_3=False):

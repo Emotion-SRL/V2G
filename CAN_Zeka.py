@@ -3,6 +3,8 @@ import time
 
 import can
 
+from zeka_status import human_readable_feedback_2_status_response
+
 
 def can_init():
     os.system('sudo ifconfig can0 down')
@@ -144,12 +146,13 @@ try:
     while True:
         psu_bus.send(psu_status_message)
         response2 = psu_bus.recv(1.5)
-        data = response2.data.hex()
-        high_byte = int(data[-6:-4], 16)
-        low_byte = int(data[-4:-2], 16)
+        # data = response2.data.hex()
+        # high_byte = int(data[-6:-4], 16)
+        # low_byte = int(data[-4:-2], 16)
 
-        temperatura = byte_to_temperature(high_byte, low_byte)
-        print("La temperatura è:", temperatura, "°C")
+        # temperatura = byte_to_temperature(high_byte, low_byte)
+        # print("La temperatura è:", temperatura, "°C")
+        human_readable_feedback_2_status_response(response2.data)
         # print(data,high_byte,low_byte)
         time.sleep(0.5)
 except KeyboardInterrupt:
