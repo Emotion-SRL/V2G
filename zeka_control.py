@@ -24,25 +24,24 @@ def assemble_main_control_command(precharge_delay=False, reset_faults=False, ful
     ACB_0 = 0x00
     ACB_1 = 0x00
     # ! Cosa significano i valori 0-1-2-3-4-5-6-8? E' un valore intero oppure il singolo bit da accendere?
-    match set_device_mode:
-        case "No mode selected":
-            pass
-        case "Buck 1Q voltage control mode":
-            ACB_0 |= 0x01  # 00000001 1
-        case "Buck 1Q current control mode":
-            ACB_0 |= 0x02  # 00000010 2
-        case "Boost 1Q voltage control mode":
-            ACB_0 |= 0x04  # 00000100 3
-        case "Boost 1Q current control mode":
-            ACB_0 |= 0x08  # 00001000 4
-        case "Buck 2Q voltage control mode":
-            ACB_0 |= 0x10  # 00010000 5
-        case "Boost 2Q voltage control mode":
-            ACB_0 |= 0x20  # 00100000 6
-        case "Boost A current B voltage control command":
-            ACB_0 |= 0x80  # 10000000 8
-        case _:
-            pass
+    if set_device_mode == "No mode selected":
+        pass
+    elif set_device_mode == "Buck 1Q voltage control mode":
+        ACB_0 |= 0x01
+    elif set_device_mode == "Buck 1Q current control mode":
+        ACB_0 |= 0x02
+    elif set_device_mode == "Boost 1Q voltage control mode":
+        ACB_0 |= 0x04
+    elif set_device_mode == "Boost 1Q current control mode":
+        ACB_0 |= 0x08
+    elif set_device_mode == "Buck 2Q voltage control mode":
+        ACB_0 |= 0x10
+    elif set_device_mode == "Boost 2Q voltage control mode":
+        ACB_0 |= 0x20
+    elif set_device_mode == "Boost A current B voltage control command":
+        ACB_0 |= 0x80
+    else:
+        pass
     return [0x80, MCB_1, MCB_0, ACB_1, ACB_0, 0xFF, 0xFF, 0xFF]
 
 
