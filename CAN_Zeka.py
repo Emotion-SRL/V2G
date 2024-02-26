@@ -4,7 +4,10 @@ import time
 
 import can
 
-from zeka_control import assemble_main_control_command, assemble_buck_1q_voltage_control_reference_command
+from zeka_control import (
+    assemble_buck_1q_voltage_control_reference_command,
+    assemble_main_control_command,
+)
 from zeka_status import (
     feedback_2_status_request,
     human_readable_feedback_2_status_response,
@@ -97,7 +100,7 @@ def BLG_heartbeat(stop_psu_heartbeat, verbose=False):
     while not stop_psu_heartbeat.is_set():
         response = thread_safe_BLG_CAN_request_response_cycle(message)
         if verbose and response is not None:
-            print(human_readable_feedback_2_status_response(response))
+            human_readable_feedback_2_status_response(response)
         time.sleep(1.4)
     print("BLG_heartbeat thread stopped")
 
