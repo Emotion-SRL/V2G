@@ -80,6 +80,22 @@ def human_readable_main_status_response(DB):
         print("Device precharging: " + green_text("complete / not started"))
     else:
         print("Device precharging: " + red_text("precharging"))
+    if ASB_0 == 0:  # 0
+        print("Device mode: " + red_text("No mode selected"))
+    elif (ASB_0 & 0x01) != 0:  # 1
+        print("Device mode: " + green_text("Buck 1Q voltage control mode"))
+    elif (ASB_0 & 0x02) != 0:  # 2
+        print("Device mode: " + green_text("Buck 1Q current control mode"))
+    elif (ASB_0 & 0x04) != 0:  # 3
+        print("Device mode: " + green_text("Boost 1Q voltage control mode"))
+    elif (ASB_0 & 0x08) != 0:  # 4
+        print("Device mode: " + green_text("Boost 1Q current control mode"))
+    elif (ASB_0 & 0x10) != 0:  # 5
+        print("Device mode: " + green_text("Buck 2Q voltage control mode"))
+    elif (ASB_0 & 0x20) != 0:  # 6
+        print("Device mode: " + green_text("Boost 2Q voltage control mode"))
+    elif (ASB_0 & 0x80) != 0:  # 8
+        print("Device mode: " + green_text("Boost A current B voltage control mode"))
     # ! ASB ha lo stesso problema di interpretazione dell'auxiliary word
 
 

@@ -28,19 +28,19 @@ def assemble_main_control_command(precharge_delay=False, reset_faults=False, ful
         case "No mode selected":
             pass
         case "Buck 1Q voltage control mode":
-            pass
+            ACB_0 |= 0x01  # 00000001 1
         case "Buck 1Q current control mode":
-            pass
+            ACB_0 |= 0x02  # 00000010 2
         case "Boost 1Q voltage control mode":
-            pass
+            ACB_0 |= 0x04  # 00000100 3
         case "Boost 1Q current control mode":
-            pass
+            ACB_0 |= 0x08  # 00001000 4
         case "Buck 2Q voltage control mode":
-            pass
+            ACB_0 |= 0x10  # 00010000 5
         case "Boost 2Q voltage control mode":
-            pass
+            ACB_0 |= 0x20  # 00100000 6
         case "Boost A current B voltage control command":
-            pass
+            ACB_0 |= 0x80  # 10000000 8
         case _:
             pass
     return [0x80, MCB_1, MCB_0, ACB_1, ACB_0, 0xFF, 0xFF, 0xFF]
