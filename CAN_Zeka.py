@@ -105,10 +105,11 @@ def BLG_heartbeat(stop_psu_heartbeat, verbose=False):
     print("BLG_heartbeat thread stopped")
 
 
-def EVI_CAN_server(stop_evi_server):
+def EVI_CAN_server(stop_evi_server, evi_bus):
     print("EVI_CAN_server thread started")
     while not stop_evi_server.is_set():
-        time.sleep(1.5)
+        message = evi_bus.recv()
+        print(f"EVI_CAN_server received:\n{message}")
     print("EVI_CAN_server thread stopped")
 
 
@@ -117,7 +118,7 @@ try:
     stop_evi_server = threading.Event()
     initialize_BLG()
     blg_heartbeat_thread = threading.Thread(target=BLG_heartbeat, kwargs={'stop_psu_heartbeat': stop_psu_heartbeat, 'verbose': True})
-    evi_server_thread = threading.Thread(target=EVI_CAN_server, kwargs={'stop_evi_server': stop_evi_server})
+    evi_server_thread = threading.Thread(target=EVI_CAN_server, kwargs={'stop_evi_server': stop_evi_server, 'evi_bus': evi_bus})
     blg_heartbeat_thread.start()
     evi_server_thread.start()
     keyboard_interrupt = threading.Event()
