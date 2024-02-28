@@ -105,11 +105,17 @@ def BLG_heartbeat(stop_psu_heartbeat, verbose=False):
     print("BLG_heartbeat thread stopped")
 
 
+received_frame_IDs = set()
+
+
 def EVI_CAN_server(stop_evi_server, evi_bus):
     print("EVI_CAN_server thread started")
     while not stop_evi_server.is_set():
         message = evi_bus.recv()
-        print(f"EVI_CAN_server received:\n{message}")
+        if message is not None:
+            print(f"ID: {message.arbitration_id} (dec), {hex(message.arbitration_id)} (hex)")
+            print(f"EVI_CAN_server received:\n{message}")
+            received_frame_IDs.add(f"ID: {message.arbitration_id} (dec), {hex(message.arbitration_id)} (hex)")
     print("EVI_CAN_server thread stopped")
 
 
@@ -132,3 +138,6 @@ except KeyboardInterrupt:
     psu_bus.shutdown()
     evi_bus.shutdown()
     can_fini()
+    print("received_frame_IDs:")
+    for frame_ID in received_frame_IDs:
+        print(f"{frame_ID}")
