@@ -1,0 +1,8 @@
+canopen==2.1.0
+importlib-metadata==4.13.0
+prettytable==3.2.0
+pyclibrary>=0.2.1,<0.3.0
+python-can==4.1.0
+toml>=0.10.2,<0.11.0
+verboselogs
+wheel

@@ -1,0 +1,62 @@
+import threading
+
+import canopen
+
+from watt_node_v2.node.base import ControllerException
+from watt_node_v2.node.supervisor import (
+    AllocationMode,
+    AllocationWord,
+    ChargePointType,
+    GlobalSupervisor,
+    SupervisorInterface,
+)
+
+# from watt_node_v2.node.supervisor.supervisor import disable_securities
+
+# Connect to CAN bus, to adpat (socketcan on linux, etc)
+network = canopen.Network()
+network.connect(interface="socketcan", channel='can1', bitrate=500_000)
+
+# Create the global supervisor and add the desired SECCs
+supervisor = GlobalSupervisor(
+    network=network,
+    chargepoints=[ChargePointType.EVIS_A_CHA],
+    interface=SupervisorInterface.EXTENDED,
+)
+# Initialize CANopen specifics
+supervisor.start()
+supervisor.node.nmt.start_heartbeat(1000)  # force start of heartbeat with 1s period
+
+# Get a specific charge point (SECC) supervisor
+secc_evis_a = supervisor.SECCSupervisors[ChargePointType.EVIS_A_CHA]
+# ---------------------------------------------------------------------------- #
+#                            Update the limitations                            #
+# ---------------------------------------------------------------------------- #
+secc_evis_a.SUP_MaxDcChargePower = 150_000
+secc_evis_a.SUP_MaxDcChargeVoltage = 500
+secc_evis_a.SUP_MaxDcChargeCurrent = 200
+secc_evis_a.SUP_MaxAcChargeCurrent = 100
+
+# ---------------------------------------------------------------------------- #
+#                              Update allocations                              #
+# ---------------------------------------------------------------------------- #
+allocation = AllocationWord()
+allocation.bmpu_list = [1]  # <-- Change with the desired allocations
+# allocation.mpu_list = [1]
+print(allocation)
+
+# To use with caution, this can be used to disable securities on EVI
+# Should not be used in normal operation
+
+# ? Disabled
+# evis_node = network.add_node(0x10)
+# disable_securities(evis_node)
+
+try:
+    # secc_evis_a.launch_charge(allocation)
+    keyboard_interrupt = threading.Event()
+    keyboard_interrupt.wait()
+except KeyboardInterrupt:
+    print("shutting down...")
+except ControllerException as e:
+    print(f"failed to start the charge. SECC status : {secc_evis_a.get_information()}")

@@ -1,0 +1,258 @@
+{
+    "indexes": {
+        "CS_ChargePoint": [
+            {
+                "subindex_name": "CP_StatusCode",
+                "lookup_name": "CS_ChPt_StatusCode_e"
+            },
+            {
+                "subindex_name": "CP_SubStatusCode",
+                "lookup_name": "CS_ChPt_SubStatusCode_e"
+            },
+            {
+                "subindex_name": "CP_ErrorCode",
+                "lookup_name": "CS_ChPt_error_e"
+            },
+            {
+                "subindex_name": "CP_ExtendedErrorCode",
+                "lookup_func": "construct_extended_error_message"
+            },
+            {
+                "subindex_name": "CP_error_from_state",
+                "lookup_name": "CS_ChPt_StatusCode_e"
+            },
+            {
+                "subindex_name": "CP_error_from_sub_state",
+                "lookup_name": "CS_ChPt_SubStatusCode_e"
+            },
+            {
+                "subindex_name": "ProtocolType"
+            },
+            {
+                "subindex_name": "ProtocolVersion"
+            }
+        ],
+        "PM_ChargeParameters": [
+            {
+                "subindex_name": "EV_TargetStateOfCharge"
+            },
+            {
+                "subindex_name": "EV_TargetStateOfChargeBulk_CCS"
+            }
+        ],
+        "PM_PowerLimitations": [
+            {
+                "subindex_name": "EV_MinDcChargeCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EV_MaxDcChargeCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EV_MaxDcVoltage",
+                "unit": "V",
+                "factor": 10
+            },
+            {
+                "subindex_name": "EV_MinDcDischargeCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EV_MaxDcDischargeCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EV_MinDcDischargeVoltage",
+                "unit": "V",
+                "factor": 10
+            },
+            {
+                "subindex_name": "EV_MaxDcDischargePower",
+                "unit": "W",
+                "factor": 1
+            },
+            {
+                "subindex_name": "EVSE_MinDcChargeCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EVSE_MaxDcChargeCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EVSE_MinDcChargeVoltage",
+                "unit": "V",
+                "factor": 10
+            },
+            {
+                "subindex_name": "EVSE_MaxDcChargeVoltage",
+                "unit": "V",
+                "factor": 10
+            },
+            {   "subindex_name": "EVSE_MinDcChargePower",
+                "unit": "W",
+                "factor": 1
+            },
+            {   "subindex_name": "EVSE_MaxDcChargePower",
+                "unit": "W",
+                "factor": 1
+            },
+            {
+                "subindex_name": "EVSE_MinDcDischargeCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EVSE_MaxDcDischargeCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EVSE_MinDcDischargeVoltage",
+                "unit": "V",
+                "factor": 10
+            },
+            {
+                "subindex_name": "EVSE_MaxDcDischargeVoltage",
+                "unit": "V",
+                "factor": 10
+            },
+            {
+                "subindex_name": "EVSE_MinDcDischargePower",
+                "unit": "W",
+                "factor": 1
+            },
+            {
+                "subindex_name": "EVSE_MaxDcDischargePower",
+                "unit": "W",
+                "factor": 1
+            }
+        ],
+        "PM_InChargeData": [
+            {
+                "subindex_name": "EVSE_MeasDcCurrent_legacy",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EVSE_MeasDcCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "EVSE_MeasDcVoltage",
+                "unit": "V",
+                "factor": 10
+            },
+            {
+                "subindex_name": "EVSE_InsulationState"
+            },
+            {
+                "subindex_name": "Temperature1",
+                "unit": "degC",
+                "factor": 1
+            },
+            {
+                "subindex_name": "Temperature2",
+                "unit": "degC",
+                "factor": 1
+            }
+        ],
+        "MPU_ChargeCmd": [
+            {
+                "subindex_name": "OutputDcCurrent",
+                "unit": "A",
+                "factor": 100
+            },
+            {
+                "subindex_name": "OutputDcVoltage",
+                "unit": "V",
+                "factor": 10
+            },
+            {
+                "subindex_name": "InputGridCurrentMax",
+                "unit": "A",
+                "factor": 100
+            }
+        ],
+        "MPU_State": [
+            {
+                "subindex_name": "RequestCode",
+                "lookup_name": "MPUsystemMode_e"
+            }
+        ],
+        "BMPU_State": [
+            {
+                "subindex_name": "pfc_state_request",
+                "lookup_name": "BMPUsystemState_e"
+            },
+            {
+                "subindex_name": "pfc_mode_request",
+                "lookup_name": "BMPUsystemMode_e"
+            },
+            {
+                "subindex_name": "grid_conf_request",
+                "lookup_name": "BMPUsystemConfiguration_e"
+            }
+        ],
+        "BMPU_ChargeCmd": [
+            {
+                "subindex_name": "v2l_frequency_setpoint",
+                "unit": "Hz",
+                "factor": 10
+            },
+            {
+                "subindex_name": "v2l_voltage_setpoint",
+                "unit": "V",
+                "factor": 10
+            },
+            {
+                "subindex_name": "i_charge_limit",
+                "unit": "A",
+                "factor": 10
+            },
+            {
+                "subindex_name": "i_discharge_limit",
+                "unit": "A",
+                "factor": 10
+            },
+            {
+                "subindex_name": "active_power_setpoint",
+                "unit": "W",
+                "factor": 10
+            },
+            {
+                "subindex_name": "reactive_power_setpoint",
+                "unit": "W",
+                "factor": 10
+            },
+            {
+                "subindex_name": "i_L1_limit",
+                "unit": "A",
+                "factor": 10
+            },
+            {
+                "subindex_name": "i_L2_limit",
+                "unit": "A",
+                "factor": 10
+            },
+            {
+                "subindex_name": "i_L3_limit",
+                "unit": "A",
+                "factor": 10
+            },
+            {
+                "subindex_name": "output_voltage_setpoint",
+                "unit": "V",
+                "factor": 10
+            }
+        ]
+    }
+}
