@@ -1,3 +1,4 @@
+import datetime
 import os
 import threading
 import time
@@ -9,8 +10,19 @@ from zeka_control import (
     assemble_main_control_command,
 )
 from zeka_status import (
+    IOs_status_request,
+    IOs_status_update,
+    error_status_request,
+    error_status_update,
+    feedback_1_status_request,
+    feedback_1_status_update,
     feedback_2_status_request,
-    human_readable_feedback_2_status_response,
+    feedback_2_status_update,
+    main_status_request,
+    main_status_update,
+    print_global_state,
+    status_dictionary,
+    status_dictionary_lock,
 )
 
 
@@ -96,12 +108,29 @@ def initialize_BLG():
 
 def BLG_heartbeat(stop_psu_heartbeat, verbose=False):
     print("BLG_heartbeat thread started")
-    message = can.Message(arbitration_id=psu_status_message_id, data=feedback_2_status_request, is_extended_id=False)
     while not stop_psu_heartbeat.is_set():
-        response = thread_safe_BLG_CAN_request_response_cycle(message)
-        if verbose and response is not None:
-            human_readable_feedback_2_status_response(response)
-        time.sleep(1.4)
+        t1 = datetime.now()
+        with status_dictionary_lock:
+            message = can.Message(arbitration_id=psu_status_message_id, data=main_status_request, is_extended_id=False)
+            response = thread_safe_BLG_CAN_request_response_cycle(message)
+            if response is not None:
+                main_status_update(response)
+            message = can.Message(arbitration_id=psu_status_message_id, data=feedback_1_status_request, is_extended_id=False)
+            response = thread_safe_BLG_CAN_request_response_cycle(message)
+            if response is not None:
+                feedback_1_status_update(response)
+            message = can.Message(arbitration_id=psu_status_message_id, data=feedback_2_status_request, is_extended_id=False)
+            response = thread_safe_BLG_CAN_request_response_cycle(message)
+            if response is not None:
+                feedback_2_status_update(response)
+            message = can.Message(arbitration_id=psu_status_message_id, data=error_status_request, is_extended_id=False)
+            response = thread_safe_BLG_CAN_request_response_cycle(message)
+            if response is not None:
+                error_status_update(response)
+            if verbose:
+                print_global_state()
+        print(f"BLG_heartbeat status pull time: {datetime.now() - t1}")
+        time.sleep(1)
     print("BLG_heartbeat thread stopped")
 
 
