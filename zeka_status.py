@@ -286,7 +286,7 @@ def error_status_update(DB):
         status_dictionary["Temperature derating active"] = "ALARM"
 
 
-def IO_status_update(DB):
+def IOs_status_update(DB):
     DORRB_1 = DB[1]
     DORRB_0 = DB[2]
     # DIRB_1 = DB[3]

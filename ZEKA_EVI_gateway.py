@@ -1,4 +1,3 @@
-import datetime
 import os
 import threading
 import time
@@ -109,7 +108,6 @@ def initialize_BLG():
 def BLG_heartbeat(stop_psu_heartbeat, verbose=False):
     print("BLG_heartbeat thread started")
     while not stop_psu_heartbeat.is_set():
-        t1 = datetime.now()
         with status_dictionary_lock:
             message = can.Message(arbitration_id=psu_status_message_id, data=main_status_request, is_extended_id=False)
             response = thread_safe_BLG_CAN_request_response_cycle(message)
@@ -127,9 +125,12 @@ def BLG_heartbeat(stop_psu_heartbeat, verbose=False):
             response = thread_safe_BLG_CAN_request_response_cycle(message)
             if response is not None:
                 error_status_update(response)
+            message = can.Message(arbitration_id=psu_status_message_id, data=IOs_status_request, is_extended_id=False)
+            response = thread_safe_BLG_CAN_request_response_cycle(message)
+            if response is not None:
+                IOs_status_update(response)
             if verbose:
                 print_global_state()
-        print(f"BLG_heartbeat status pull time: {datetime.now() - t1}")
         time.sleep(1)
     print("BLG_heartbeat thread stopped")
 

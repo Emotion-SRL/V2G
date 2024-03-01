@@ -53,10 +53,28 @@ print(allocation)
 # disable_securities(evis_node)
 
 try:
-    # secc_evis_a.launch_charge(allocation)
-    keyboard_interrupt = threading.Event()
-    keyboard_interrupt.wait()
+    while True:
+        print("Inserisci un comando:\n-0 per iniziare una ricarica\n-1 per terminare una ricarica\n-2 per l'emergency stop")
+        command = input()
+        if command == '0':
+            secc_evis_a.launch_charge(allocation)
+        elif command == '1':
+            print("Vuoi anche staccare la presa o intendi lasciarla agganciata per iniziare una nuova ricarica dopo?\n-0 stacca la presa\n-1 non staccare la presa")
+            command2 = input()
+            unplug = True
+            if command2 == '1':
+                unplug = False
+            elif command2 == '0':
+                unplug = True
+            else:
+                print("Comando non valido. Riprovare.")
+                continue
+            secc_evis_a.stop_charge(unplug=unplug)
+        elif command == '2':
+            secc_evis_a.emergency_stop()
+        else:
+            print("Comando non valido. Riprovare.")
 except KeyboardInterrupt:
     print("shutting down...")
-except ControllerException as e:
-    print(f"failed to start the charge. SECC status : {secc_evis_a.get_information()}")
+except ControllerException:
+    print(f"Controller Exception occurred. SECC status : {secc_evis_a.get_information()}")

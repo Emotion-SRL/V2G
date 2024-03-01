@@ -1,15 +1,16 @@
+import logging
 import pathlib
 import time
-import logging
-from typing import List, Dict
-from pathlib import Path
 from enum import Enum, IntEnum
+from pathlib import Path
+from typing import Dict, List
 
 import canopen
+
 from ...local_node import LocalNode
-from ..lu import LookupTable
-from ..allocation_word import AllocationWord, AllocationMode
+from ..allocation_word import AllocationMode, AllocationWord
 from ..base import ControllerException
+from ..lu import LookupTable
 
 logger = logging.getLogger()
 
@@ -571,20 +572,63 @@ class SECCSupervisor:
         """
         logger.info(f"current state of chargepoint is {self.state}")
         if not (self.state == SECCSupervisorState.CP18_Reset):
+            print("CP state is not 18, sending SUP2_Cancellation")
             logger.info("cancelling any ongoing charge")
             self.SUP_RequestCode = SupervisorRequestCode.SUP2_Cancellation
             self.wait_for_state(SECCSupervisorState.CP17_EmergencyStop)
+            print("CP state is 17, sending SUP6_Reset")
         logger.info("sending a reset")
         self.SUP_RequestCode = SupervisorRequestCode.SUP6_Reset
         self.wait_for_state(SECCSupervisorState.CP18_Reset)
+        print("CP state is 18, sending SUP0_Idle")
         self.SUP_RequestCode = SupervisorRequestCode.SUP0_Idle
         self.wait_for_state(SECCSupervisorState.CP1_WaitForSupApprob)
+        print("CP state is 1, sending SUP1_Approbation")
         self.SUP_RequestCode = SupervisorRequestCode.SUP1_Approbation
         self.puAllocationCurrent = allocation
         self.puAllocationTarget = allocation
         self.wait_for_substate(31)
         self.SUP_RequestCode = SupervisorRequestCode.SUP3_AllocationDone
         self.wait_for_state(SECCSupervisorState.CP8_ChargeLoop, timeout_s=20)
+        print("CP state is 8, charge loop started")
+
+    def stop_charge(self, unplug=True):
+        if not (self.state == SECCSupervisorState.CP8_ChargeLoop):
+            print(f"CP state is {self.state} and not 8, can't operate normal stop.")
+            return
+        self.SUP_RequestCode = SupervisorRequestCode.SUP4_SECCSupervisorStopChargeReq
+        self.wait_for_state(SECCSupervisorState.CP14_ReleasePUs)
+        print("CP state is 14, sending SUP5_Terminate")
+        self.SUP_RequestCode = SupervisorRequestCode.SUP5_Terminate
+        self.wait_for_state(SECCSupervisorState.CP15_UnlockEvConnector)
+        if unplug:
+            self.wait_for_state(SECCSupervisorState.CP16_WaitForPMidle)
+            print("CP state is 16, sending SUP0_Idle")
+            self.SUP_RequestCode = SupervisorRequestCode.SUP0_Idle
+            self.wait_for_state(SECCSupervisorState.CP1_WaitForSupApprob)
+            print("CP state is 1, waiting for SUP1_Approbation.")
+            print("Charge successfully stopped.")
+            return
+        else:
+            print("CP state is 15, sending SUP7_RearmChargeWithoutUnplug")
+            self.SUP_RequestCode = SupervisorRequestCode.SUP7_RearmChargeWithoutUnplug
+            self.wait_for_state(SECCSupervisorState.CP19_WaitForPMidle)
+            print("CP state is 19, waiting for SUP0_Idle.")
+            self.SUP_RequestCode = SupervisorRequestCode.SUP0_Idle
+            self.wait_for_state(SECCSupervisorState.CP1_WaitForSupApprob)
+            print("CP state is 1, waiting for SUP1_Approbation.")
+            print("Charge successfully stopped.")
+            return
+
+    def emergency_stop(self):
+        print("sending SUP2_Cancellation")
+        self.SUP_RequestCode = SupervisorRequestCode.SUP2_Cancellation
+        self.wait_for_state(SECCSupervisorState.CP17_EmergencyStop)
+        print("CP state is 17, sending SUP6_Reset")
+        self.SUP_RequestCode = SupervisorRequestCode.SUP6_Reset
+        self.wait_for_state(SECCSupervisorState.CP18_Reset)
+        print("CP state is 18, waiting for SUP0_Idle")
+        print("emergency stop completed")
 
     def update_charge_settings(
         self,
@@ -616,7 +660,7 @@ class SECCSupervisor:
         Error : {self.error}
         Extended error : {self.extended_error}
         Error from state : {self.error_from_state.value}
-        Error from substate : {self.error_from_substate} 
+        Error from substate : {self.error_from_substate}
         """
         return return_str
 
