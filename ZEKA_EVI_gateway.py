@@ -15,7 +15,17 @@ from evi_semantics import (
     evi_grid_conf_translator,
     evi_state_word_translator,
 )
-from settings import can_fini, can_init, evi_BMPU_ID, evi_bus, zeka_bus
+from settings import (
+    can_fini,
+    can_init,
+    evi_baud_rate,
+    evi_BMPU_ID,
+    evi_can_channel,
+    evi_can_interface,
+    zeka_baud_rate,
+    zeka_can_channel,
+    zeka_can_interface,
+)
 from status_dictionaries import (
     evi_directives_dictionary,
     zeka_status_dictionary,
@@ -137,8 +147,8 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                     side_B_voltage = zeka_status_dictionary["Side B (DC-Link) voltage"]
                     side_A_current = zeka_status_dictionary["Side A (Battery) current"]
                     side_B_current = zeka_status_dictionary["Side B (DC-Link) current"]
-                    side_A_power = side_A_voltage * side_A_current
-                    side_B_power = side_B_voltage * side_B_current
+                    side_A_power = round(side_A_voltage * side_A_current, 1)
+                    side_B_power = round(side_B_voltage * side_B_current, 1)
                     fault_detected = zeka_status_dictionary["Device fault"]
                     running_detected = zeka_status_dictionary["Device running"]
                     ready_detected = zeka_status_dictionary["Device ready"]
@@ -217,6 +227,8 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
 
 
 can_init()
+zeka_bus = can.thread_safe_bus.ThreadSafeBus(channel=zeka_can_channel, bustype=zeka_can_interface, bitrate=zeka_baud_rate)
+evi_bus = can.thread_safe_bus.ThreadSafeBus(channel=evi_can_channel, bustype=evi_can_interface, bitrate=evi_baud_rate)
 try:
     data_bytes = zeka_control.assemble_main_control_command(
         precharge_delay=True,
@@ -245,9 +257,12 @@ except KeyboardInterrupt:
     stop_zeka_heartbeat.set()
     stop_evi_server.set()
     stop_evi_heartbeat.set()
-    evi_heartbeat_thread.join()
-    zeka_heartbeat_thread.join()
-    evi_server_thread.join()
+    if evi_heartbeat_thread.is_alive():
+        evi_heartbeat_thread.join()
+    if zeka_heartbeat_thread.is_alive():
+        zeka_heartbeat_thread.join()
+    if evi_server_thread.is_alive():
+        evi_server_thread.join()
     zeka_bus.shutdown()
     evi_bus.shutdown()
     can_fini()

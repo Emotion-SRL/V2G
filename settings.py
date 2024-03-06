@@ -1,7 +1,5 @@
 import os
 
-import can
-
 zeka_can_interface = 'socketcan'
 zeka_can_channel = 'can0'
 zeka_baud_rate = 250000
@@ -9,9 +7,6 @@ zeka_baud_rate = 250000
 evi_can_interface = 'socketcan'
 evi_can_channel = 'can1'
 evi_baud_rate = 500000
-
-zeka_bus = can.thread_safe_bus.ThreadSafeBus(channel=zeka_can_channel, bustype=zeka_can_interface, bitrate=zeka_baud_rate)
-evi_bus = can.thread_safe_bus.ThreadSafeBus(channel=evi_can_channel, bustype=evi_can_interface, bitrate=evi_baud_rate)
 
 # ? EVI RELATED SETTINGS
 evi_BMPU_ID = 0x5F  # ID of BMPU 1, same used by supervisor.py

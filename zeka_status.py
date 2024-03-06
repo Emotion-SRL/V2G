@@ -17,7 +17,15 @@ def print_global_state():
     print("GLOBAL STATE:")
     for key, value in zeka_status_dictionary.items():
         if value is not None:
-            print(key + ": " + orange_text(str(value)))
+            if key in ["Side A (Battery) voltage", "Side B (DC-Link) voltage"]:
+                output = str(value) + " V"
+            elif key in ["Side A (Battery) current", "Side B (DC-Link) current"]:
+                output = str(value) + " A"
+            elif key in ["Heat-sink temperature (Side A)", "Heat-sink temperature (Side B)"]:
+                output = str(value) + " °C"
+            else:
+                output = value
+            print(key + ": " + orange_text(str(output)))
 
 
 def main_status_update(DB):
@@ -70,21 +78,21 @@ def main_status_update(DB):
     else:
         zeka_status_dictionary["Device precharging"] = "precharging"
     if ASB_0 == 0:  # 0
-        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.NO_MODE_SELECTED
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.NO_MODE_SELECTED.value
     elif ASB_0 == 1:  # (ASB_0 & 0x01) != 0:  # 1
-        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_1Q_VOLTAGE_CONTROL_MODE
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_1Q_VOLTAGE_CONTROL_MODE.value
     elif ASB_0 == 2:  # (ASB_0 & 0x02) != 0:  # 2
-        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_1Q_CURRENT_CONTROL_MODE
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_1Q_CURRENT_CONTROL_MODE.value
     elif ASB_0 == 3:  # (ASB_0 & 0x04) != 0:  # 3
-        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_1Q_VOLTAGE_CONTROL_MODE
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_1Q_VOLTAGE_CONTROL_MODE.value
     elif ASB_0 == 4:  # (ASB_0 & 0x08) != 0:  # 4
-        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_1Q_CURRENT_CONTROL_MODE
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_1Q_CURRENT_CONTROL_MODE.value
     elif ASB_0 == 5:  # (ASB_0 & 0x10) != 0:  # 5
-        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_2Q_VOLTAGE_CONTROL_MODE
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_2Q_VOLTAGE_CONTROL_MODE.value
     elif ASB_0 == 6:  # (ASB_0 & 0x20) != 0:
-        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_2Q_VOLTAGE_CONTROL_MODE
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_2Q_VOLTAGE_CONTROL_MODE.value
     elif ASB_0 == 8:  # (ASB_0 & 0x80) != 0:  # 8
-        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_A_CURRENT_B_VOLTAGE_CONTROL_COMMAND
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_A_CURRENT_B_VOLTAGE_CONTROL_COMMAND.value
 
 
 def feedback_1_status_update(DB):
@@ -94,12 +102,9 @@ def feedback_1_status_update(DB):
     BC_0 = DB[4]
     HST_1 = DB[5]
     HST_0 = DB[6]
-    voltage = read_SWORD(BV_1, BV_0, 0.1)
-    current = read_SWORD(BC_1, BC_0, 0.1)
-    temperature = read_SWORD(HST_1, HST_0, 0.1)
-    zeka_status_dictionary["Side A (Battery) voltage"] = str(voltage) + " V"
-    zeka_status_dictionary["Side A (Battery) current"] = str(current) + " A"
-    zeka_status_dictionary["Heat-sink temperature (Side A)"] = str(temperature) + " °C"
+    zeka_status_dictionary["Side A (Battery) voltage"] = read_SWORD(BV_1, BV_0, 0.1)
+    zeka_status_dictionary["Side A (Battery) current"] = read_SWORD(BC_1, BC_0, 0.1)
+    zeka_status_dictionary["Heat-sink temperature (Side A)"] = read_SWORD(HST_1, HST_0, 0.1)
 
 
 def feedback_2_status_update(DB):
@@ -109,12 +114,9 @@ def feedback_2_status_update(DB):
     DCI_0 = DB[4]
     HST_1 = DB[5]
     HST_0 = DB[6]
-    voltage = read_SWORD(DCV_1, DCV_0, 0.1)
-    current = read_SWORD(DCI_1, DCI_0, 0.1)
-    temperature = read_SWORD(HST_1, HST_0, 0.1)
-    zeka_status_dictionary["Side B (DC-Link) voltage"] = str(voltage) + " V"
-    zeka_status_dictionary["Side B (DC-Link) current"] = str(current) + " A"
-    zeka_status_dictionary["Heat-sink temperature (Side B)"] = str(temperature) + " °C"
+    zeka_status_dictionary["Side B (DC-Link) voltage"] = read_SWORD(DCV_1, DCV_0, 0.1)
+    zeka_status_dictionary["Side B (DC-Link) current"] = read_SWORD(DCI_1, DCI_0, 0.1)
+    zeka_status_dictionary["Heat-sink temperature (Side B)"] = read_SWORD(HST_1, HST_0, 0.1)
 
 
 def error_status_update(DB):
