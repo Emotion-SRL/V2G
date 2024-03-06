@@ -13,7 +13,7 @@ evi_BMPU_ID = 0x5F  # ID of BMPU 1, same used by supervisor.py
 evi_BMPU_battery_max_voltage = 700
 evi_BMPU_battery_max_current = 120
 evi_BMPU_grid_max_current = 60
-evi_BMPU_grid_max_power = 45000  # 750 x 60
+evi_BMPU_grid_max_power = 40000  # 750 x 60, lowered to 40kW for better safety
 
 # ? ZEKA RELATED SETTINGS
 zeka_master_node_id = 0x001  # Master ID con cui scrivere al device come Master della comunicazione CAN
