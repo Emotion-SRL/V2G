@@ -50,6 +50,8 @@ evi_grid_conf_translator = {
 
 
 def assemble_x180(fault_detected, running_detected, ready_detected, precharging_detected, previously_faulted):
+    if evi_directives_dictionary["pfc_mode_request"] is None or evi_directives_dictionary["grid_conf_request"] is None:
+        return None
     if fault_detected is not None:
         evi_status = EVIStates.STATE_SAFE_D
     elif running_detected is not None:

@@ -163,6 +163,18 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                     # If a fault is detected, previously_faulted is also set
                     if fault_detected is not None:
                         zeka_status_dictionary["PREVIOUSLY_FAULTED"] = True
+                # ! PDO 4 (x180)
+                data_bytes = assemble_x180(
+                    fault_detected=fault_detected,
+                    running_detected=running_detected,
+                    ready_detected=ready_detected,
+                    precharging_detected=precharging_detected,
+                    previously_faulted=previously_faulted
+                )
+                if data_bytes is None:
+                    continue
+                message = can.Message(arbitration_id=0x180+evi_BMPU_ID, data=data_bytes, is_extended_id=False)
+                evi_bus.send(message)
                 # ! PDO 5 (x280)
                 message = can.Message(arbitration_id=0x280+evi_BMPU_ID, data=assembled_x280_message, is_extended_id=False)
                 evi_bus.send(message)
@@ -173,16 +185,6 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 # ! PDO 11 (x480)
                 data_bytes = assemble_x460(battery_voltage=side_A_voltage, battery_current=side_A_current, battery_power=side_A_power)
                 message = can.Message(arbitration_id=0x460+evi_BMPU_ID, data=data_bytes, is_extended_id=False)
-                evi_bus.send(message)
-                # ! PDO 4 (x180)
-                data_bytes = assemble_x180(
-                    fault_detected=fault_detected,
-                    running_detected=running_detected,
-                    ready_detected=ready_detected,
-                    precharging_detected=precharging_detected,
-                    previously_faulted=previously_faulted
-                )
-                message = can.Message(arbitration_id=0x180+evi_BMPU_ID, data=data_bytes, is_extended_id=False)
                 evi_bus.send(message)
             if evi_directives_dictionary["UPDATE_REFERENCE"]:
                 if evi_directives_dictionary["battery_voltage_setpoint"] is not None and evi_directives_dictionary["i_charge_limit"] is not None and evi_directives_dictionary["i_discharge_limit"] is not None:
@@ -246,6 +248,7 @@ try:
     stop_evi_server = threading.Event()
     stop_evi_heartbeat = threading.Event()
     zeka_heartbeat_thread = threading.Thread(target=ZEKA_heartbeat, kwargs={'stop_psu_heartbeat': stop_zeka_heartbeat, 'verbose': True})
+    time.sleep(1)
     evi_heartbeat_thread = threading.Thread(target=EVI_heartbeat, kwargs={'stop_evi_heartbeat': stop_evi_heartbeat, 'evi_bus': evi_bus})
     evi_server_thread = threading.Thread(target=EVI_CAN_server, kwargs={'stop_evi_server': stop_evi_server, 'evi_bus': evi_bus, 'evi_heartbeat_thread': evi_heartbeat_thread})
     zeka_heartbeat_thread.start()
