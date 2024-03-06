@@ -1,8 +1,7 @@
-import threading
 
 import canopen
 
-from evi_semantics import evi_BMPU_ID
+from settings import evi_BMPU_ID
 from watt_node_v2.node.base import ControllerException
 from watt_node_v2.node.supervisor import (
     AllocationMode,

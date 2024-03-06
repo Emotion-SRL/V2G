@@ -9,7 +9,7 @@ evi_can_channel = 'can1'
 evi_baud_rate = 500000
 
 # ? EVI RELATED SETTINGS
-evi_BMPU_ID = 0x5F  # ID of BMPU 1, same used by supervisor.py
+evi_BMPU_ID = 0x5F  # ID of BMPU 1
 evi_BMPU_battery_max_voltage = 700
 evi_BMPU_battery_max_current = 120
 evi_BMPU_grid_max_current = 60
