@@ -1,11 +1,24 @@
 
+from enum import Enum
+
 from settings import zeka_control_packet_id, zeka_device_ID, zeka_master_node_id
 from utilities import write_UWORD
 
 zeka_control_message_id = (zeka_master_node_id << 8) | (zeka_device_ID << 3) | zeka_control_packet_id
 
 
-def assemble_main_control_command(precharge_delay=False, reset_faults=False, full_stop=False, run_device=False, set_device_mode="No mode selected"):
+class ZekaDeviceModes(Enum):
+    NO_MODE_SELECTED = "No mode selected"
+    BUCK_1Q_VOLTAGE_CONTROL_MODE = "Buck 1Q voltage control mode"
+    BUCK_1Q_CURRENT_CONTROL_MODE = "Buck 1Q current control mode"
+    BOOST_1Q_VOLTAGE_CONTROL_MODE = "Boost 1Q voltage control mode"
+    BOOST_1Q_CURRENT_CONTROL_MODE = "Boost 1Q current control mode"
+    BUCK_2Q_VOLTAGE_CONTROL_MODE = "Buck 2Q voltage control mode"
+    BOOST_2Q_VOLTAGE_CONTROL_MODE = "Boost 2Q voltage control mode"
+    BOOST_A_CURRENT_B_VOLTAGE_CONTROL_COMMAND = "Boost A current B voltage control command"
+
+
+def assemble_main_control_command(precharge_delay=False, reset_faults=False, full_stop=False, run_device=False, set_device_mode=ZekaDeviceModes.NO_MODE_SELECTED):
     MCB_0 = 0x00
     if precharge_delay:
         MCB_0 |= 0x01  # 00000001
@@ -18,21 +31,21 @@ def assemble_main_control_command(precharge_delay=False, reset_faults=False, ful
         MCB_1 |= 0x01  # 00000001
     ACB_0 = 0x00
     ACB_1 = 0x00
-    if set_device_mode == "No mode selected":
+    if set_device_mode == ZekaDeviceModes.NO_MODE_SELECTED:
         pass
-    elif set_device_mode == "Buck 1Q voltage control mode":
+    elif set_device_mode == ZekaDeviceModes.BUCK_1Q_VOLTAGE_CONTROL_MODE:
         ACB_0 = 1
-    elif set_device_mode == "Buck 1Q current control mode":
+    elif set_device_mode == ZekaDeviceModes.BUCK_1Q_CURRENT_CONTROL_MODE:
         ACB_0 = 2
-    elif set_device_mode == "Boost 1Q voltage control mode":
+    elif set_device_mode == ZekaDeviceModes.BOOST_1Q_VOLTAGE_CONTROL_MODE:
         ACB_0 = 3
-    elif set_device_mode == "Boost 1Q current control mode":
+    elif set_device_mode == ZekaDeviceModes.BOOST_1Q_CURRENT_CONTROL_MODE:
         ACB_0 = 4
-    elif set_device_mode == "Buck 2Q voltage control mode":
+    elif set_device_mode == ZekaDeviceModes.BUCK_2Q_VOLTAGE_CONTROL_MODE:
         ACB_0 = 5
-    elif set_device_mode == "Boost 2Q voltage control mode":
+    elif set_device_mode == ZekaDeviceModes.BOOST_2Q_VOLTAGE_CONTROL_MODE:
         ACB_0 = 6
-    elif set_device_mode == "Boost A current B voltage control command":
+    elif set_device_mode == ZekaDeviceModes.BOOST_A_CURRENT_B_VOLTAGE_CONTROL_COMMAND:
         ACB_0 = 8
     else:
         pass

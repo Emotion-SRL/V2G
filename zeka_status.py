@@ -2,6 +2,7 @@
 from settings import zeka_device_ID, zeka_master_node_id, zeka_status_packet_id
 from status_dictionaries import zeka_status_dictionary
 from utilities import orange_text, read_SWORD
+from zeka_control import ZekaDeviceModes
 
 zeka_status_message_id = (zeka_master_node_id << 8) | (zeka_device_ID << 3) | zeka_status_packet_id
 
@@ -69,21 +70,21 @@ def main_status_update(DB):
     else:
         zeka_status_dictionary["Device precharging"] = "precharging"
     if ASB_0 == 0:  # 0
-        zeka_status_dictionary["Device mode"] = "No mode selected"
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.NO_MODE_SELECTED
     elif ASB_0 == 1:  # (ASB_0 & 0x01) != 0:  # 1
-        zeka_status_dictionary["Device mode"] = "Buck 1Q voltage control mode"
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_1Q_VOLTAGE_CONTROL_MODE
     elif ASB_0 == 2:  # (ASB_0 & 0x02) != 0:  # 2
-        zeka_status_dictionary["Device mode"] = "Buck 1Q current control mode"
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_1Q_CURRENT_CONTROL_MODE
     elif ASB_0 == 3:  # (ASB_0 & 0x04) != 0:  # 3
-        zeka_status_dictionary["Device mode"] = "Boost 1Q voltage control mode"
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_1Q_VOLTAGE_CONTROL_MODE
     elif ASB_0 == 4:  # (ASB_0 & 0x08) != 0:  # 4
-        zeka_status_dictionary["Device mode"] = "Boost 1Q current control mode"
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_1Q_CURRENT_CONTROL_MODE
     elif ASB_0 == 5:  # (ASB_0 & 0x10) != 0:  # 5
-        zeka_status_dictionary["Device mode"] = "Buck 2Q voltage control mode"
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BUCK_2Q_VOLTAGE_CONTROL_MODE
     elif ASB_0 == 6:  # (ASB_0 & 0x20) != 0:
-        zeka_status_dictionary["Device mode"] = "Boost 2Q voltage control mode"
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_2Q_VOLTAGE_CONTROL_MODE
     elif ASB_0 == 8:  # (ASB_0 & 0x80) != 0:  # 8
-        zeka_status_dictionary["Device mode"] = "Boost A current B voltage control mode"
+        zeka_status_dictionary["Device mode"] = ZekaDeviceModes.BOOST_A_CURRENT_B_VOLTAGE_CONTROL_COMMAND
 
 
 def feedback_1_status_update(DB):

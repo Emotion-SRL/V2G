@@ -7,6 +7,7 @@ import can
 import zeka_control
 import zeka_status
 from evi_semantics import (
+    EVIStates,
     assemble_x180,
     assemble_x360,
     assemble_x460,
@@ -22,11 +23,11 @@ from status_dictionaries import (
 )
 from utilities import orange_text, read_UWORD, red_text, teal_text
 
-bmpu_mode = "Buck 2Q voltage control mode"
+chosen_zeka_device_mode = zeka_control.ZekaDeviceModes.BUCK_2Q_VOLTAGE_CONTROL_MODE
 
 reference_control_function = {
-    "Buck 2Q voltage control mode": zeka_control.assemble_buck_2q_voltage_control_reference_command,
-    "Boost 2Q voltage control mode": zeka_control.assemble_boost_2q_voltage_control_reference_command,
+    zeka_control.ZekaDeviceModes.BUCK_2Q_VOLTAGE_CONTROL_MODE : zeka_control.assemble_buck_2q_voltage_control_reference_command,
+    zeka_control.ZekaDeviceModes.BOOST_2Q_VOLTAGE_CONTROL_MODE : zeka_control.assemble_boost_2q_voltage_control_reference_command,
 }
 
 zeka_lock = threading.Lock()
@@ -175,7 +176,7 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 evi_bus.send(message)
             if evi_directives_dictionary["UPDATE_REFERENCE"]:
                 if evi_directives_dictionary["battery_voltage_setpoint"] is not None and evi_directives_dictionary["i_charge_limit"] is not None and evi_directives_dictionary["i_discharge_limit"] is not None:
-                    data_bytes = (reference_control_function[bmpu_mode])(
+                    data_bytes = (reference_control_function[chosen_zeka_device_mode])(
                         voltage_reference=evi_directives_dictionary["battery_voltage_setpoint"],
                         current_limit_to_side_A=evi_directives_dictionary["i_charge_limit"],
                         current_limit_to_side_B=evi_directives_dictionary["i_discharge_limit"]
@@ -187,21 +188,21 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 precharge_delay = False
                 reset_faults = False
                 run_device = False
-                set_device_mode = bmpu_mode
-                if evi_directives_dictionary["pfc_state_request"] == 1:  # STAND_BY
+                set_device_mode = chosen_zeka_device_mode
+                if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY:
                     precharge_delay = True
                     run_device = False
-                elif evi_directives_dictionary["pfc_state_request"] == 2:  # POWER_ON
+                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON:
                     run_device = True
                     set_device_mode = "No mode selected"
-                elif evi_directives_dictionary["pfc_state_request"] == 3:  # CHARGE
+                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE:
                     run_device = True
-                    set_device_mode = bmpu_mode
-                elif evi_directives_dictionary["pfc_state_request"] == 7:  # FAULT_ACK
+                    set_device_mode = chosen_zeka_device_mode
+                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_FAULT_ACK:
                     reset_faults = True
                     run_device = False
                     precharge_delay = True
-                    set_device_mode = bmpu_mode
+                    set_device_mode = chosen_zeka_device_mode
                 data_bytes = zeka_control.assemble_main_control_command(
                     precharge_delay=precharge_delay,
                     reset_faults=reset_faults,
@@ -222,7 +223,7 @@ try:
         reset_faults=True,
         full_stop=False,
         run_device=False,
-        set_device_mode=bmpu_mode
+        set_device_mode=chosen_zeka_device_mode
     )
     message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
     response = zeka_request_response_cycle(message)

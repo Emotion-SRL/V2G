@@ -1,4 +1,6 @@
 
+from enum import Enum
+
 from settings import (
     evi_BMPU_battery_max_current,
     evi_BMPU_battery_max_voltage,
@@ -7,6 +9,18 @@ from settings import (
 )
 from status_dictionaries import evi_directives_dictionary
 from utilities import write_UWORD
+
+
+class EVIStates(Enum):
+    STATE_INIT = 0
+    STATE_STANDBY = 1
+    STATE_POWER_ON = 2
+    STATE_CHARGE = 3
+    STATE_SAFE_D = 4
+    STATE_RESERVED = 5
+    STATE_STOPPING = 6
+    STATE_FAULT_ACK = 7
+
 
 evi_state_word_translator = {
     0 : "STATE_INIT (system is starting)",
@@ -37,16 +51,16 @@ evi_grid_conf_translator = {
 
 def assemble_x180(fault_detected, running_detected, ready_detected, precharging_detected, previously_faulted):
     if fault_detected is not None:
-        evi_status = 4  # SAFE_D
+        evi_status = EVIStates.STATE_SAFE_D
     elif running_detected is not None:
-        evi_status = 3  # CHARGE
+        evi_status = EVIStates.STATE_CHARGE
     elif ready_detected is not None:
-        evi_status = 2  # POWER_ON
+        evi_status = EVIStates.STATE_POWER_ON
     elif precharging_detected is not None:
         if previously_faulted:
-            evi_status = 7  # FAULT_ACK
+            evi_status = EVIStates.STATE_FAULT_ACK
         else:
-            evi_status = 1  # STANDBY
+            evi_status = EVIStates.STATE_STANDBY
     DB0 = evi_status  # 0:3 bits are for system state
     DB1 = ((evi_directives_dictionary["pfc_mode_request"] << 5) | (evi_directives_dictionary["grid_conf_request"] << 3)) & 0xFF
     return [DB0, DB1, 0, 0, 0, 0, 0, 0]
