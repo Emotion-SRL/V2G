@@ -2,6 +2,7 @@ import threading
 
 import canopen
 
+from evi_semantics import evi_BMPU_ID
 from watt_node_v2.node.base import ControllerException
 from watt_node_v2.node.supervisor import (
     AllocationMode,
@@ -41,9 +42,8 @@ secc_evis_a.SUP_MaxAcChargeCurrent = 100
 #                              Update allocations                              #
 # ---------------------------------------------------------------------------- #
 allocation = AllocationWord()
-allocation.bmpu_list = [1]  # <-- Change with the desired allocations
+allocation.bmpu_list = [evi_BMPU_ID-0x5E]  # <-- Change with the desired allocations
 # allocation.mpu_list = [1]
-print(allocation)
 
 # To use with caution, this can be used to disable securities on EVI
 # Should not be used in normal operation
