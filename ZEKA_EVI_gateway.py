@@ -95,6 +95,7 @@ def EVI_heartbeat(stop_evi_heartbeat, evi_bus):
     while not stop_evi_heartbeat.is_set():
         message = can.Message(arbitration_id=0x700+evi_BMPU_ID, data=[5, 0, 0, 0, 0, 0, 0, 0], is_extended_id=False)
         evi_bus.send(message)
+        print("sent BMPU HB with arbitration id: " + teal_text(hex(0x700+evi_BMPU_ID)))
         time.sleep(0.9)
     print("EVI_heartbeat thread stopped")
 
@@ -123,7 +124,7 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 if grid_conf_request != evi_directives_dictionary["grid_conf_request"]:
                     print("EVI updated GRID_CONF_REQUEST to: " + teal_text(evi_grid_conf_translator[grid_conf_request]))
                     evi_directives_dictionary["grid_conf_request"] = grid_conf_request
-                battery_voltage_setpoint = read_UWORD(high_byte=DB[3], low_byte=DB[4], scale_factor=0.1)
+                battery_voltage_setpoint = read_UWORD(high_byte=DB[7], low_byte=DB[6], scale_factor=0.1)
                 if battery_voltage_setpoint != evi_directives_dictionary["battery_voltage_setpoint"]:
                     print("EVI updated BATTERY_VOLTAGE_SETPOINT to: " + teal_text(battery_voltage_setpoint))
                     evi_directives_dictionary["battery_voltage_setpoint"] = battery_voltage_setpoint
@@ -131,12 +132,12 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
             # ? PDO 2
             elif message.arbitration_id == 0x300 + evi_BMPU_ID:
                 DB = message.data
-                i_charge_limit = read_UWORD(high_byte=DB[0], low_byte=DB[1], scale_factor=0.1)
+                i_charge_limit = read_UWORD(high_byte=DB[1], low_byte=DB[0], scale_factor=0.1)
                 if i_charge_limit != evi_directives_dictionary["i_charge_limit"]:
                     print("EVI updated I_CHARGE_LIMIT to: " + teal_text(i_charge_limit))
                     evi_directives_dictionary["i_charge_limit"] = i_charge_limit
                     evi_directives_dictionary["UPDATE_REFERENCE"] = True
-                i_discharge_limit = read_UWORD(high_byte=DB[2], low_byte=DB[3], scale_factor=0.1)
+                i_discharge_limit = read_UWORD(high_byte=DB[3], low_byte=DB[2], scale_factor=0.1)
                 if i_discharge_limit != evi_directives_dictionary["i_discharge_limit"]:
                     print("EVI updated I_DISCHARGE_LIMIT to: " + teal_text(i_discharge_limit))
                     evi_directives_dictionary["i_discharge_limit"] = i_discharge_limit
@@ -145,6 +146,7 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 # EVI is requesting PU heartbeat start
                 message = can.Message(arbitration_id=0x580+evi_BMPU_ID, data=[60, 16, 10, 1, 0, 0, 0, 0], is_extended_id=False)
                 evi_bus.send(message)
+                print("sent message with arbitration id: " + teal_text(hex(0x580 + evi_BMPU_ID)))
                 if not evi_heartbeat_thread.is_alive():
                     evi_heartbeat_thread.start()
             # ? SYNC
@@ -259,6 +261,7 @@ try:
     evi_heartbeat_thread = threading.Thread(target=EVI_heartbeat, kwargs={'stop_evi_heartbeat': stop_evi_heartbeat, 'evi_bus': evi_bus})
     evi_server_thread = threading.Thread(target=EVI_CAN_server, kwargs={'stop_evi_server': stop_evi_server, 'evi_bus': evi_bus, 'evi_heartbeat_thread': evi_heartbeat_thread})
     zeka_heartbeat_thread.start()
+    # evi_heartbeat_thread.start()
     evi_server_thread.start()
     keyboard_interrupt = threading.Event()
     keyboard_interrupt.wait()
