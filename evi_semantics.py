@@ -53,16 +53,16 @@ def assemble_x180(fault_detected, running_detected, ready_detected, precharging_
     if evi_directives_dictionary["pfc_mode_request"] is None or evi_directives_dictionary["grid_conf_request"] is None:
         return None
     if fault_detected is not None:
-        evi_status = EVIStates.STATE_SAFE_D
+        evi_status = EVIStates.STATE_SAFE_D.value
     elif running_detected is not None:
-        evi_status = EVIStates.STATE_CHARGE
+        evi_status = EVIStates.STATE_CHARGE.value
     elif ready_detected is not None:
-        evi_status = EVIStates.STATE_POWER_ON
+        evi_status = EVIStates.STATE_POWER_ON.value
     elif precharging_detected is not None:
         if previously_faulted:
-            evi_status = EVIStates.STATE_FAULT_ACK
+            evi_status = EVIStates.STATE_FAULT_ACK.value
         else:
-            evi_status = EVIStates.STATE_STANDBY
+            evi_status = EVIStates.STATE_STANDBY.value
     DB0 = evi_status  # 0:3 bits are for system state
     DB1 = ((evi_directives_dictionary["pfc_mode_request"] << 5) | (evi_directives_dictionary["grid_conf_request"] << 3)) & 0xFF
     return [DB0, DB1, 0, 0, 0, 0, 0, 0]
