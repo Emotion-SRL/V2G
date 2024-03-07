@@ -41,7 +41,7 @@ secc_evis_a.SUP_MaxAcChargeCurrent = 100
 #                              Update allocations                              #
 # ---------------------------------------------------------------------------- #
 allocation = AllocationWord()
-allocation.bmpu_list = [evi_BMPU_ID-0x5E]  # <-- Change with the desired allocations
+allocation.bmpu_list = [evi_BMPU_ID-0x5D]  # <-- Change with the desired allocations
 # allocation.mpu_list = [1]
 
 # To use with caution, this can be used to disable securities on EVI

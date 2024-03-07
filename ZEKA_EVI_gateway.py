@@ -43,6 +43,9 @@ reference_control_function = {
 zeka_lock = threading.Lock()
 
 
+spotted_evi_frames = set()
+
+
 def zeka_request_response_cycle(request):
     with zeka_lock:
         zeka_bus.send(request)
@@ -100,6 +103,9 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
     while not stop_evi_server.is_set():
         message = evi_bus.recv()
         if message is not None:
+            if message.arbitration_id not in spotted_evi_frames:
+                print(red_text(hex(message.arbitration_id)) + " spotted for the first time!")
+                spotted_evi_frames.add(message.arbitration_id)
             # ? PDO 1
             if message.arbitration_id == 0x200 + evi_BMPU_ID:
                 DB = message.data
