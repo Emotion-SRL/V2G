@@ -1,6 +1,4 @@
 
-import struct
-
 
 def red_text(text):
     return '\033[91m' + text + '\033[0m'
@@ -16,7 +14,11 @@ def orange_text(text):
 
 def read_UWORD(high_byte, low_byte, scale_factor):
     all_bits = (high_byte << 8) | low_byte
-    unsigned_int = struct.unpack('H', all_bits)[0]
+    unsigned_int = 0
+    for i in range(0, 16):
+        if all_bits & 1:
+            unsigned_int += 2 ** i
+        all_bits = all_bits >> 1
     return round(unsigned_int * scale_factor, 1)
 
 

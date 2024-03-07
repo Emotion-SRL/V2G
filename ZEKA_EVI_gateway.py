@@ -14,6 +14,7 @@ from evi_semantics import (
     assembled_x280_message,
     evi_grid_conf_translator,
     evi_state_word_translator,
+    evi_system_mode_translator,
 )
 from settings import (
     can_fini,
@@ -111,12 +112,12 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 DB = message.data
                 pfc_state_request = DB[0]
                 if pfc_state_request != evi_directives_dictionary["pfc_state_request"]:
-                    print("EVI updated STATE_REQUEST to: " + teal_text(evi_state_word_translator(pfc_state_request)))
+                    print("EVI updated STATE_REQUEST to: " + teal_text(evi_state_word_translator[pfc_state_request]))
                     evi_directives_dictionary["pfc_state_request"] = pfc_state_request
                     evi_directives_dictionary["UPDATE_COMMAND"] = True
                 pfc_mode_request = DB[1]
                 if pfc_mode_request != evi_directives_dictionary["pfc_mode_request"]:
-                    print("EVI updated MODE_REQUEST to: " + teal_text(pfc_mode_request))
+                    print("EVI updated MODE_REQUEST to: " + teal_text(evi_system_mode_translator[pfc_mode_request]))
                     evi_directives_dictionary["pfc_mode_request"] = pfc_mode_request
                 grid_conf_request = DB[2]
                 if grid_conf_request != evi_directives_dictionary["grid_conf_request"]:
