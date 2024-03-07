@@ -558,9 +558,14 @@ class SECCSupervisor:
         This will raise a timeout after waiting fo timeout_s seconds
         """
         start_time = time.time()
+        current_state = None
         while time.time() - start_time < timeout_s:
             if self.state == state:
                 return
+            else:
+                if current_state != self.state:
+                    print("reached state: " + str(self.state))
+                    current_state = self.state
             time.sleep(0.1)
         raise ControllerException(
             f"Charge point did not go in state {state} after {timeout_s}s (in {self.state})"
