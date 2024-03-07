@@ -1,15 +1,15 @@
 
 
 def red_text(text):
-    return '\033[91m' + text + '\033[0m'
+    return '\033[91m' + str(text) + '\033[0m'
 
 
 def teal_text(text):
-    return '\033[96m' + text + '\033[0m'
+    return '\033[96m' + str(text) + '\033[0m'
 
 
 def orange_text(text):
-    return '\033[93m' + text + '\033[0m'
+    return '\033[93m' + str(text) + '\033[0m'
 
 
 def read_UWORD(high_byte, low_byte, scale_factor):
