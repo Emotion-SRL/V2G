@@ -93,7 +93,7 @@ def ZEKA_heartbeat(stop_psu_heartbeat, verbose=False):
 def EVI_heartbeat(stop_evi_heartbeat, evi_bus):
     print(teal_text("EVI_heartbeat thread started"))
     while not stop_evi_heartbeat.is_set():
-        message = can.Message(arbitration_id=0x700+evi_BMPU_ID, data=[5, 0, 0, 0, 0, 0, 0, 0], is_extended_id=False)
+        message = can.Message(arbitration_id=0x700+evi_BMPU_ID, data=[5], is_extended_id=False)
         evi_bus.send(message)
         print("sent BMPU HB with arbitration id: " + teal_text(hex(0x700+evi_BMPU_ID)))
         time.sleep(0.9)
@@ -184,16 +184,20 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                     continue
                 message = can.Message(arbitration_id=0x180+evi_BMPU_ID, data=data_bytes, is_extended_id=False)
                 evi_bus.send(message)
+                # print("sent message with arbitration id: " + teal_text(hex(0x180 + evi_BMPU_ID)))
                 # ! PDO 5 (x280)
                 message = can.Message(arbitration_id=0x280+evi_BMPU_ID, data=assembled_x280_message, is_extended_id=False)
                 evi_bus.send(message)
+                # print("sent message with arbitration id: " + teal_text(hex(0x280 + evi_BMPU_ID)))
                 # ! PDO 10 (x380)
                 data_bytes = assemble_x360(grid_voltage=side_B_voltage, grid_current=side_B_current, grid_power=side_B_power)
                 message = can.Message(arbitration_id=0x360+evi_BMPU_ID, data=data_bytes, is_extended_id=False)
                 evi_bus.send(message)
+                # print("sent message with arbitration id: " + teal_text(hex(0x360 + evi_BMPU_ID)))
                 # ! PDO 11 (x480)
                 data_bytes = assemble_x460(battery_voltage=side_A_voltage, battery_current=side_A_current, battery_power=side_A_power)
                 message = can.Message(arbitration_id=0x460+evi_BMPU_ID, data=data_bytes, is_extended_id=False)
+                # print("sent message with arbitration id: " + teal_text(hex(0x460 + evi_BMPU_ID)))
                 evi_bus.send(message)
             if evi_directives_dictionary["UPDATE_REFERENCE"]:
                 if evi_directives_dictionary["battery_voltage_setpoint"] is not None and evi_directives_dictionary["i_charge_limit"] is not None and evi_directives_dictionary["i_discharge_limit"] is not None:
@@ -204,6 +208,7 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                     )
                     psu_message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
                     zeka_request_response_cycle(psu_message)
+                    print(red_text("***** SENT REFERENCE COMMAND! *****"))
                     evi_directives_dictionary["UPDATE_REFERENCE"] = False
             if evi_directives_dictionary["UPDATE_COMMAND"]:
                 precharge_delay = False
@@ -233,6 +238,7 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 )
                 psu_message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
                 zeka_request_response_cycle(psu_message)
+                print(red_text("***** SENT STATUS COMMAND! : " + evi_state_word_translator[evi_directives_dictionary["pfc_state_request"]] + "*****"))
                 evi_directives_dictionary["UPDATE_COMMAND"] = False
     print(teal_text("EVI_CAN_server thread stopped"))
 
@@ -261,7 +267,7 @@ try:
     evi_heartbeat_thread = threading.Thread(target=EVI_heartbeat, kwargs={'stop_evi_heartbeat': stop_evi_heartbeat, 'evi_bus': evi_bus})
     evi_server_thread = threading.Thread(target=EVI_CAN_server, kwargs={'stop_evi_server': stop_evi_server, 'evi_bus': evi_bus, 'evi_heartbeat_thread': evi_heartbeat_thread})
     zeka_heartbeat_thread.start()
-    # evi_heartbeat_thread.start()
+    evi_heartbeat_thread.start()
     evi_server_thread.start()
     keyboard_interrupt = threading.Event()
     keyboard_interrupt.wait()
