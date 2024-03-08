@@ -8,7 +8,7 @@ from settings import (
     evi_BMPU_grid_max_power,
 )
 from status_dictionaries import evi_directives_dictionary
-from utilities import write_UWORD
+from utilities import write_WORD
 
 
 class EVIStates(Enum):
@@ -68,27 +68,27 @@ def assemble_x180(fault_detected, running_detected, ready_detected, precharging_
     return [DB0, DB1, 0, 0, 0, 0, 0, 0]
 
 
-x280_DB1, x280_DB0 = write_UWORD(value=evi_BMPU_battery_max_voltage, scale_factor=0.1)
-x280_DB2, x280_DB3 = write_UWORD(value=evi_BMPU_battery_max_current, scale_factor=0.1)
-x280_DB4, x280_DB5 = write_UWORD(value=evi_BMPU_grid_max_current, scale_factor=0.1)
-x280_DB6, x280_DB7 = write_UWORD(value=evi_BMPU_grid_max_power, scale_factor=10)
+x280_DB1, x280_DB0 = write_WORD(value=evi_BMPU_battery_max_voltage, scale_factor=0.1)
+x280_DB3, x280_DB2 = write_WORD(value=evi_BMPU_battery_max_current, scale_factor=0.1)
+x280_DB5, x280_DB4 = write_WORD(value=evi_BMPU_grid_max_current, scale_factor=0.1)
+x280_DB7, x280_DB6 = write_WORD(value=evi_BMPU_grid_max_power, scale_factor=10)
 assembled_x280_message = [x280_DB0, x280_DB1, x280_DB2, x280_DB3, x280_DB4, x280_DB5, x280_DB6, x280_DB7]
 
 
 def assemble_x360(grid_voltage, grid_current, grid_power, grid_Q=0):
-    DB1, DB0 = write_UWORD(value=grid_voltage, scale_factor=0.1)
-    DB3, DB2 = write_UWORD(value=grid_current, scale_factor=0.1)
-    DB5, DB4 = write_UWORD(value=grid_power, scale_factor=10)
-    DB7, DB6 = write_UWORD(value=grid_Q, scale_factor=10)
+    DB1, DB0 = write_WORD(value=grid_voltage, scale_factor=0.1)
+    DB3, DB2 = write_WORD(value=grid_current, scale_factor=0.1)
+    DB5, DB4 = write_WORD(value=grid_power, scale_factor=10)
+    DB7, DB6 = write_WORD(value=grid_Q, scale_factor=10)
     return [DB0, DB1, DB2, DB3, DB4, DB5, DB6, DB7]
 
 
 def assemble_x460(battery_voltage, battery_current, battery_power, available_battery_current=None):
-    DB1, DB0 = write_UWORD(value=battery_voltage, scale_factor=0.1)
-    DB3, DB2 = write_UWORD(value=battery_current, scale_factor=0.1)
-    DB5, DB4 = write_UWORD(value=battery_power, scale_factor=10)
+    DB1, DB0 = write_WORD(value=battery_voltage, scale_factor=0.1)
+    DB3, DB2 = write_WORD(value=battery_current, scale_factor=0.1)
+    DB5, DB4 = write_WORD(value=battery_power, scale_factor=10)
     # ! TODO
     if available_battery_current is None:
         available_battery_current = battery_current
-    DB7, DB6 = write_UWORD(value=available_battery_current, scale_factor=0.1)
+    DB7, DB6 = write_WORD(value=available_battery_current, scale_factor=0.1)
     return [DB0, DB1, DB2, DB3, DB4, DB5, DB6, DB7]
