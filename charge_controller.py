@@ -1,5 +1,6 @@
 
 import canopen
+import traceback
 
 from settings import evi_BMPU_ID
 from watt_node_v2.node.base import ControllerException
@@ -75,5 +76,7 @@ try:
             print("Comando non valido. Riprovare.")
 except KeyboardInterrupt:
     print("shutting down...")
-except ControllerException:
+except ControllerException as e:
     print(f"Controller Exception occurred. SECC status : {secc_evis_a.get_information()}")
+    print("EXCEPTION: " + str(e))
+    traceback.format_exc()

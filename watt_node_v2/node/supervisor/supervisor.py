@@ -563,9 +563,7 @@ class SECCSupervisor:
             if self.state == state:
                 return
             else:
-                if current_state != self.state:
-                    print("reached state: " + str(self.state))
-                    current_state = self.state
+                print("current state: " + str(self.state) + " current substate: " + str(self.substate))
             time.sleep(0.1)
         raise ControllerException(
             f"Charge point did not go in state {state} after {timeout_s}s (in {self.state})"
