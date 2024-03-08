@@ -559,11 +559,19 @@ class SECCSupervisor:
         """
         start_time = time.time()
         current_state = None
+        current_substate = None
         while time.time() - start_time < timeout_s:
             if self.state == state:
                 return
             else:
-                print("current state: " + str(self.state) + " current substate: " + str(self.substate))
+                if current_state != self.state:
+                    print("reached state: " + str(self.state))
+                    current_state = self.state
+                    if current_state == SECCSupervisorState.CP17_EmergencyStop:
+                        print("ERROR DETAILS: " + self.get_information())
+                if current_substate != self.substate:
+                    print("reached state: " + str(self.state) + " substate: " + str(self.substate))
+                    current_substate = self.substate
             time.sleep(0.1)
         raise ControllerException(
             f"Charge point did not go in state {state} after {timeout_s}s (in {self.state})"
@@ -592,7 +600,7 @@ class SECCSupervisor:
         self.puAllocationTarget = allocation
         self.wait_for_substate(31)
         self.SUP_RequestCode = SupervisorRequestCode.SUP3_AllocationDone
-        self.wait_for_state(SECCSupervisorState.CP8_ChargeLoop, timeout_s=20)
+        self.wait_for_state(SECCSupervisorState.CP8_ChargeLoop, timeout_s=90)
         print("CP state is 8, charge loop started")
 
     def stop_charge(self, unplug=True):

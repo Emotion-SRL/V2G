@@ -64,7 +64,7 @@ def assemble_x180(fault_detected, running_detected, ready_detected, precharging_
         else:
             evi_status = EVIStates.STATE_STANDBY.value
     DB0 = evi_status  # 0:3 bits are for system state
-    DB1 = ((evi_directives_dictionary["pfc_mode_request"] << 5) | (evi_directives_dictionary["grid_conf_request"] << 3)) & 0xFF
+    DB1 = ((evi_directives_dictionary["grid_conf_request"] << 5) | (evi_directives_dictionary["pfc_mode_request"] << 3)) & 0xFF
     return [DB0, DB1, 0, 0, 0, 0, 0, 0]
 
 
