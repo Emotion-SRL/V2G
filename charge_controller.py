@@ -33,10 +33,12 @@ secc_evis_a = supervisor.SECCSupervisors[ChargePointType.EVIS_A_CHA]
 # ---------------------------------------------------------------------------- #
 #                            Update the limitations                            #
 # ---------------------------------------------------------------------------- #
-secc_evis_a.SUP_MaxDcChargePower = 150_000
-secc_evis_a.SUP_MaxDcChargeVoltage = 500
-secc_evis_a.SUP_MaxDcChargeCurrent = 200
-secc_evis_a.SUP_MaxAcChargeCurrent = 100
+secc_evis_a.SUP_MaxDcChargePower = 40_000
+secc_evis_a.SUP_MaxDcChargeVoltage = 700
+secc_evis_a.SUP_MaxDcChargeCurrent = 100
+secc_evis_a.SUP_MaxAcChargeCurrent = 60
+
+
 
 # ---------------------------------------------------------------------------- #
 #                              Update allocations                              #

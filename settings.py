@@ -11,7 +11,7 @@ evi_baud_rate = 500000
 # ? EVI RELATED SETTINGS
 evi_BMPU_ID = 0x5E  # ID of BMPU 0
 evi_BMPU_battery_max_voltage = 700
-evi_BMPU_battery_max_current = 120
+evi_BMPU_battery_max_current = 100
 evi_BMPU_grid_max_current = 60
 evi_BMPU_grid_max_power = 40000  # 750 x 60, lowered to 40kW for better safety
 

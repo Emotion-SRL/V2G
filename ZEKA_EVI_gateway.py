@@ -208,26 +208,27 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                     )
                     psu_message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
                     zeka_request_response_cycle(psu_message)
-                    print(red_text("***** SENT REFERENCE COMMAND! *****"))
+                    print(f'***** SENT REFERENCE COMMAND! Voltage:{evi_directives_dictionary["battery_voltage_setpoint"]} Cur_A:{evi_directives_dictionary["i_charge_limit"]} Cur_B:{evi_directives_dictionary["i_discharge_limit"]}*****')
                     evi_directives_dictionary["UPDATE_REFERENCE"] = False
             if evi_directives_dictionary["UPDATE_COMMAND"]:
                 precharge_delay = False
-                reset_faults = False
+                reset_faults = True
                 run_device = False
                 set_device_mode = chosen_zeka_device_mode
                 if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY:
-                    precharge_delay = True
+                    precharge_delay = False
                     run_device = False
-                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON:
-                    run_device = True
-                    set_device_mode = "No mode selected"
-                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE:
+                # elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON:
+                #     run_device = True
+                #     set_device_mode = zeka_control.ZekaDeviceModes.NO_MODE_SELECTED
+                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE or evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON:
+                    precharge_delay = False
                     run_device = True
                     set_device_mode = chosen_zeka_device_mode
                 elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_FAULT_ACK:
                     reset_faults = True
                     run_device = False
-                    precharge_delay = True
+                    precharge_delay = False
                     set_device_mode = chosen_zeka_device_mode
                 data_bytes = zeka_control.assemble_main_control_command(
                     precharge_delay=precharge_delay,
@@ -247,8 +248,64 @@ can_init()
 zeka_bus = can.thread_safe_bus.ThreadSafeBus(channel=zeka_can_channel, bustype=zeka_can_interface, bitrate=zeka_baud_rate)
 evi_bus = can.thread_safe_bus.ThreadSafeBus(channel=evi_can_channel, bustype=evi_can_interface, bitrate=evi_baud_rate)
 try:
+    stop_zeka_heartbeat = threading.Event()
+    zeka_heartbeat_thread = threading.Thread(target=ZEKA_heartbeat, kwargs={'stop_psu_heartbeat': stop_zeka_heartbeat, 'verbose': True})
+    zeka_heartbeat_thread.start()
+    data_bytes = (zeka_control.assemble_buck_2q_voltage_control_reference_command)(
+        voltage_reference=435,
+        current_limit_to_side_A=1,
+        current_limit_to_side_B=2
+    )
+    psu_message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
+    zeka_request_response_cycle(psu_message)
+    # print("SENT REFERENCE THRESHOLDS")
     data_bytes = zeka_control.assemble_main_control_command(
         precharge_delay=True,
+        reset_faults=True,
+        full_stop=False,
+        run_device=True,
+        set_device_mode=chosen_zeka_device_mode
+    )
+    message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
+    response = zeka_request_response_cycle(message)
+    # if response is None:
+    #     print(red_text("BLG initialization failed!"))
+    #     exit(1)
+    # else:
+    #     print("SET STATUS ON STANDBY")
+    # time.sleep(8)
+    # data_bytes = zeka_control.assemble_main_control_command(
+    #     precharge_delay=False,
+    #     reset_faults=True,
+    #     full_stop=False,
+    #     run_device=True,
+    #     set_device_mode=zeka_control.ZekaDeviceModes.NO_MODE_SELECTED
+    # )
+    # message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
+    # response = zeka_request_response_cycle(message)
+    # if response is None:
+    #     print(red_text("BLG initialization failed!"))
+    #     exit(1)
+    # else:
+    #     print("SET STATUS ON POWER_ON")
+    # time.sleep(8)
+    # data_bytes = zeka_control.assemble_main_control_command(
+    #     precharge_delay=True,
+    #     reset_faults=True,
+    #     full_stop=False,
+    #     run_device=False,
+    #     set_device_mode=chosen_zeka_device_mode
+    # )
+    # message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
+    # response = zeka_request_response_cycle(message)
+    # if response is None:
+    #     print(red_text("BLG initialization failed!"))
+    #     exit(1)
+    # else:
+    #     print("SET STATUS TO CHARGING")
+    time.sleep(8)
+    data_bytes = zeka_control.assemble_main_control_command(
+        precharge_delay=False,
         reset_faults=True,
         full_stop=False,
         run_device=False,
@@ -259,14 +316,14 @@ try:
     if response is None:
         print(red_text("BLG initialization failed!"))
         exit(1)
-    stop_zeka_heartbeat = threading.Event()
+    # time.sleep(8)
     stop_evi_server = threading.Event()
     stop_evi_heartbeat = threading.Event()
-    zeka_heartbeat_thread = threading.Thread(target=ZEKA_heartbeat, kwargs={'stop_psu_heartbeat': stop_zeka_heartbeat, 'verbose': True})
+    
     time.sleep(1)
     evi_heartbeat_thread = threading.Thread(target=EVI_heartbeat, kwargs={'stop_evi_heartbeat': stop_evi_heartbeat, 'evi_bus': evi_bus})
     evi_server_thread = threading.Thread(target=EVI_CAN_server, kwargs={'stop_evi_server': stop_evi_server, 'evi_bus': evi_bus, 'evi_heartbeat_thread': evi_heartbeat_thread})
-    zeka_heartbeat_thread.start()
+    
     evi_heartbeat_thread.start()
     evi_server_thread.start()
     keyboard_interrupt = threading.Event()
