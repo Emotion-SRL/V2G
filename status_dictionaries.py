@@ -1,12 +1,10 @@
 
 import threading
 
-from evi_semantics import EVIStates
-
 zeka_status_dictionary_lock = threading.Lock()
 
 evi_directives_dictionary = {
-    "pfc_state_request" : EVIStates.STATE_STANDBY,
+    "pfc_state_request" : 1,
     "pfc_mode_request" : None,
     "grid_conf_request" : None,
     "battery_voltage_setpoint" : None,  # Voltage reference
