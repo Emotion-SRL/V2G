@@ -116,7 +116,7 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                 if pfc_state_request != evi_directives_dictionary["pfc_state_request"]:
                     print("EVI updated STATE_REQUEST to: " + teal_text(evi_state_word_translator[pfc_state_request]))
                     evi_directives_dictionary["UPDATE_COMMAND"] = True
-                    evi_directives_dictionary["COMMMAND_TIMESTAMP"] = datetime.now()
+                    evi_directives_dictionary["COMMAND_TIMESTAMP"] = datetime.now()
                     evi_directives_dictionary["pfc_state_request"] = pfc_state_request
                 pfc_mode_request = DB[1]
                 if pfc_mode_request != evi_directives_dictionary["pfc_mode_request"]:
@@ -193,21 +193,27 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                 message = can.Message(arbitration_id=0x460+evi_BMPU_ID, data=data_bytes, is_extended_id=False)
                 evi_bus.send(message)
             if evi_directives_dictionary["UPDATE_COMMAND"]:
-                if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY:
+                if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY.value:
                     stop_zeka()
-                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE:
+                    evi_directives_dictionary["UPDATE_COMMAND"] = False
+                elif (
+                    (evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE.value or
+                     evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value)
+                     and (datetime.now() - evi_directives_dictionary["COMMAND_TIMESTAMP"] > timedelta(seconds=0.7))
+                ):
                     start_zeka(
                         voltage=evi_directives_dictionary["battery_voltage_setpoint"],
                         current_a=evi_directives_dictionary["i_charge_limit"],
                         current_b=evi_directives_dictionary["i_discharge_limit"]
                     )
                     evi_directives_dictionary["UPDATE_REFERENCE"] = False
-                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_FAULT_ACK:
+                    evi_directives_dictionary["UPDATE_COMMAND"] = False
+                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_FAULT_ACK.value:
                     reset_zeka_faults()
-                evi_directives_dictionary["UPDATE_COMMAND"] = False
+                    evi_directives_dictionary["UPDATE_COMMAND"] = False
             if (
                 evi_directives_dictionary["UPDATE_REFERENCE"] and
-                evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE and
+                evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE.value and
                 evi_directives_dictionary["battery_voltage_setpoint"] is not None and
                 evi_directives_dictionary["i_charge_limit"] is not None and
                 evi_directives_dictionary["i_discharge_limit"] is not None
@@ -249,7 +255,7 @@ def start_zeka(voltage, current_a, current_b):
 def stop_zeka():
     data_bytes = zeka_control.assemble_main_control_command(
         precharge_delay=True,
-        reset_faults=False,
+        reset_faults=True,
         full_stop=False,
         run_device=False,
         set_device_mode=chosen_zeka_device_mode
@@ -294,6 +300,7 @@ try:
     keyboard_interrupt = threading.Event()
     keyboard_interrupt.wait()
 except KeyboardInterrupt:
+    reset_zeka_faults()
     stop_zeka_heartbeat.set()
     stop_evi_server.set()
     stop_evi_heartbeat.set()

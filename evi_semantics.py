@@ -64,12 +64,12 @@ def assemble_x180(fault_detected, running_detected, previously_faulted):
         if previously_faulted:
             # Se era stato richiesto un fault ack, si restituisce fault ack
             evi_status = EVIStates.STATE_FAULT_ACK.value
-        else:
+        else: 
             if (
-                (evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON or
-                 evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE)
+                (evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value or
+                 evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE.value)
                 and
-                (datetime.now() - evi_directives_dictionary["COMMAND_TIMESTAMP"] > timedelta(seconds=1))
+                (datetime.now() - evi_directives_dictionary["COMMAND_TIMESTAMP"] > timedelta(seconds=1.2))
             ):
                 # Se era stato richiesto un precharging, si fa finta di averlo completato dopo un secondo
                 evi_status = EVIStates.STATE_POWER_ON.value
@@ -78,7 +78,7 @@ def assemble_x180(fault_detected, running_detected, previously_faulted):
                 evi_status = EVIStates.STATE_STANDBY.value
     DB0 = evi_status  # 0:3 bits are for system state
     DB1 = ((evi_directives_dictionary["grid_conf_request"] << 5) | (evi_directives_dictionary["pfc_mode_request"] << 3)) & 0xFF
-    print("REPORTING TO EVI WITH STATUS: " + purple_text(evi_status))
+    print("REPORTING TO EVI WITH STATUS: " + purple_text(evi_status) + " REQUEST WAS: " + purple_text(evi_directives_dictionary["pfc_state_request"]))
     return [DB0, DB1, 0, 0, 0, 0, 0, 0]
 
 

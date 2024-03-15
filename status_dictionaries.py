@@ -1,5 +1,6 @@
 
 import threading
+from datetime import datetime
 
 zeka_status_dictionary_lock = threading.Lock()
 
@@ -12,6 +13,7 @@ evi_directives_dictionary = {
     "i_discharge_limit" : None,  # Current limit to Side B
     "UPDATE_COMMAND" : False,
     "UPDATE_REFERENCE" : False,
+    "COMMAND_TIMESTAMP": datetime.now()
 }
 
 zeka_status_dictionary = {
