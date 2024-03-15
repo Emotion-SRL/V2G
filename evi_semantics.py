@@ -31,7 +31,8 @@ evi_state_word_translator = {
     4 : "STATE_SAFE_D (critical fault, system halted untill user action)",
     5 : "STATE_RESERVED (for future use)",
     6 : "STATE_STOPPING (converter is stopping and power is being killed off)",
-    7 : "STATE_FAULT_ACK (fault acknowledgement)"
+    7 : "STATE_FAULT_ACK (fault acknowledgement)",
+    8 : "??? STATE_FAULT_ACK (fault acknowledgement)"
 }
 
 evi_system_mode_translator = {
@@ -69,7 +70,7 @@ def assemble_x180(fault_detected, running_detected, previously_faulted):
                 (evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value or
                  evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE.value)
                 and
-                (datetime.now() - evi_directives_dictionary["COMMAND_TIMESTAMP"] > timedelta(seconds=1.2))
+                (datetime.now() - evi_directives_dictionary["COMMAND_TIMESTAMP"] > timedelta(seconds=0.8))
             ):
                 # Se era stato richiesto un precharging, si fa finta di averlo completato dopo un secondo
                 evi_status = EVIStates.STATE_POWER_ON.value
