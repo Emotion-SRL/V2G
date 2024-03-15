@@ -12,6 +12,10 @@ def orange_text(text):
     return '\033[93m' + str(text) + '\033[0m'
 
 
+def purple_text(text):
+    return '\033[95m' + str(text) + '\033[0m'
+
+
 def read_UWORD(high_byte, low_byte, scale_factor):
     all_bits = (high_byte << 8) | low_byte
     unsigned_int = 0
@@ -34,5 +38,3 @@ def write_WORD(value, scale_factor=0.1):
 
 def read_SWORD(high_byte, low_byte, scale_factor):
     return round(((high_byte << 8) | low_byte) * scale_factor, 1)
-
-

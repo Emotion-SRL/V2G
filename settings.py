@@ -8,6 +8,7 @@ evi_can_interface = 'socketcan'
 evi_can_channel = 'can1'
 evi_baud_rate = 500000
 
+
 # ? EVI RELATED SETTINGS
 evi_BMPU_ID = 0x5E  # ID of BMPU 0
 evi_BMPU_battery_max_voltage = 700

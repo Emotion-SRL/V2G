@@ -33,7 +33,7 @@ from status_dictionaries import (
     zeka_status_dictionary,
     zeka_status_dictionary_lock,
 )
-from utilities import orange_text, read_UWORD, red_text, teal_text
+from utilities import orange_text, purple_text, read_UWORD, red_text, teal_text
 
 chosen_zeka_device_mode = zeka_control.ZekaDeviceModes.BUCK_2Q_VOLTAGE_CONTROL_MODE
 
@@ -92,16 +92,16 @@ def ZEKA_heartbeat(stop_psu_heartbeat, verbose=False):
 
 
 def EVI_heartbeat(stop_evi_heartbeat, evi_bus):
-    print(teal_text("EVI_heartbeat thread started"))
+    print(purple_text("EVI_heartbeat thread started"))
     while not stop_evi_heartbeat.is_set():
         message = can.Message(arbitration_id=0x700+evi_BMPU_ID, data=[5], is_extended_id=False)
         evi_bus.send(message)
-        print("sent BMPU HB with arbitration id: " + teal_text(hex(0x700+evi_BMPU_ID)))
+        # print("sent BMPU HB with arbitration id: " + teal_text(hex(0x700+evi_BMPU_ID)))
         time.sleep(0.9)
-    print("EVI_heartbeat thread stopped")
+    print(purple_text("EVI_heartbeat thread stopped"))
 
 
-def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
+def EVI_CAN_server(stop_evi_server, evi_bus):
     print(teal_text("EVI_CAN_server thread started"))
     while not stop_evi_server.is_set():
         message = evi_bus.recv()
@@ -115,8 +115,8 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 pfc_state_request = DB[0]
                 if pfc_state_request != evi_directives_dictionary["pfc_state_request"]:
                     print("EVI updated STATE_REQUEST to: " + teal_text(evi_state_word_translator[pfc_state_request]))
-                    evi_directives_dictionary["UPDATE_COMMAND"] = evi_directives_dictionary["pfc_state_request"]
-                    evi_directives_dictionary["delay"] = datetime.now()
+                    evi_directives_dictionary["UPDATE_COMMAND"] = True
+                    evi_directives_dictionary["COMMMAND_TIMESTAMP"] = datetime.now()
                     evi_directives_dictionary["pfc_state_request"] = pfc_state_request
                 pfc_mode_request = DB[1]
                 if pfc_mode_request != evi_directives_dictionary["pfc_mode_request"]:
@@ -144,13 +144,12 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                     print("EVI updated I_DISCHARGE_LIMIT to: " + teal_text(i_discharge_limit))
                     evi_directives_dictionary["i_discharge_limit"] = i_discharge_limit
                     evi_directives_dictionary["UPDATE_REFERENCE"] = True
+            # ? HB start request
             elif message.arbitration_id == 0x600 + evi_BMPU_ID:
-                # EVI is requesting PU heartbeat start
+                # Se viene richiesto lo start dell'HB della PU, confermiamo lo start (in realtà era già partito)
                 message = can.Message(arbitration_id=0x580+evi_BMPU_ID, data=[60, 16, 10, 1, 0, 0, 0, 0], is_extended_id=False)
                 evi_bus.send(message)
                 print("sent message with arbitration id: " + teal_text(hex(0x580 + evi_BMPU_ID)))
-                if not evi_heartbeat_thread.is_alive():
-                    evi_heartbeat_thread.start()
             # ? SYNC
             elif message.arbitration_id == 0x80:
                 with zeka_status_dictionary_lock:
@@ -162,8 +161,6 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                     side_B_power = round(side_B_voltage * side_B_current, 1)
                     fault_detected = zeka_status_dictionary["Device fault"]
                     running_detected = zeka_status_dictionary["Device running"]
-                    ready_detected = zeka_status_dictionary["Device ready"]
-                    precharging_detected = zeka_status_dictionary["Device precharging"]
                     '''Previously faulted is used when in state "precharging" to decide if
                     we need to signal STAND_BY or FAULT_ACK to the EVI'''
                     previously_faulted = zeka_status_dictionary["PREVIOUSLY_FAULTED"]
@@ -178,8 +175,6 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 data_bytes = assemble_x180(
                     fault_detected=fault_detected,
                     running_detected=running_detected,
-                    ready_detected=ready_detected,
-                    precharging_detected=precharging_detected,
                     previously_faulted=previously_faulted
                 )
                 if data_bytes is None:
@@ -197,33 +192,32 @@ def EVI_CAN_server(stop_evi_server, evi_bus, evi_heartbeat_thread):
                 data_bytes = assemble_x460(battery_voltage=side_A_voltage, battery_current=side_A_current, battery_power=side_A_power)
                 message = can.Message(arbitration_id=0x460+evi_BMPU_ID, data=data_bytes, is_extended_id=False)
                 evi_bus.send(message)
-            if evi_directives_dictionary["UPDATE_REFERENCE"] and evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE:
-                if evi_directives_dictionary["battery_voltage_setpoint"] is not None and evi_directives_dictionary["i_charge_limit"] is not None and evi_directives_dictionary["i_discharge_limit"] is not None:
-                    update_zeka_references(
+            if evi_directives_dictionary["UPDATE_COMMAND"]:
+                if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY:
+                    stop_zeka()
+                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE:
+                    start_zeka(
                         voltage=evi_directives_dictionary["battery_voltage_setpoint"],
                         current_a=evi_directives_dictionary["i_charge_limit"],
                         current_b=evi_directives_dictionary["i_discharge_limit"]
                     )
                     evi_directives_dictionary["UPDATE_REFERENCE"] = False
-            if evi_directives_dictionary["UPDATE_COMMAND"] is not None:
-                updated = False
-                if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY:
-                    stop_zeka()
-                    updated = True
-                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON or (evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE and evi_directives_dictionary["UPDATE_COMMAND"] != EVIStates.STATE_POWER_ON):
-                    if datetime.now() - evi_directives_dictionary["delay"] > timedelta(seconds=1):
-                        start_zeka(
-                            voltage=evi_directives_dictionary["battery_voltage_setpoint"],
-                            current_a=evi_directives_dictionary["i_charge_limit"],
-                            current_b=evi_directives_dictionary["i_discharge_limit"]
-                        )
-                        evi_directives_dictionary["UPDATE_REFERENCE"] = False
-                        updated = True
                 elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_FAULT_ACK:
                     reset_zeka_faults()
-                    updated = True
-                if updated:
-                    evi_directives_dictionary["UPDATE_COMMAND"] = None
+                evi_directives_dictionary["UPDATE_COMMAND"] = False
+            if (
+                evi_directives_dictionary["UPDATE_REFERENCE"] and
+                evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE and
+                evi_directives_dictionary["battery_voltage_setpoint"] is not None and
+                evi_directives_dictionary["i_charge_limit"] is not None and
+                evi_directives_dictionary["i_discharge_limit"] is not None
+            ):
+                update_zeka_references(
+                    voltage=evi_directives_dictionary["battery_voltage_setpoint"],
+                    current_a=evi_directives_dictionary["i_charge_limit"],
+                    current_b=evi_directives_dictionary["i_discharge_limit"]
+                )
+                evi_directives_dictionary["UPDATE_REFERENCE"] = False
     print(teal_text("EVI_CAN_server thread stopped"))
 
 
@@ -235,7 +229,7 @@ def update_zeka_references(voltage, current_a, current_b):
     )
     psu_message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
     zeka_request_response_cycle(psu_message)
-    print(orange_text("***** SENT REFERENCE COMMAND TO ZEKA! Voltage:" + str(voltage) + " Cur_A:" + str(current_a) + " Cur_B:" + str(current_b) + "*****"))
+    print("***** SENT REFERENCE COMMAND TO ZEKA! Voltage:" + red_text(voltage) + " Cur_A:" + red_text(current_a) + " Cur_B:" + red_text(current_b) + "*****")
 
 
 def start_zeka(voltage, current_a, current_b):
@@ -248,8 +242,8 @@ def start_zeka(voltage, current_a, current_b):
         set_device_mode=chosen_zeka_device_mode
     )
     message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
-    print(orange_text("***** SENT START COMMAND TO ZEKA! *****"))
-    response = zeka_request_response_cycle(message)
+    print("***** SENT " + red_text("START") + " COMMAND TO ZEKA! *****")
+    zeka_request_response_cycle(message)
 
 
 def stop_zeka():
@@ -261,8 +255,8 @@ def stop_zeka():
         set_device_mode=chosen_zeka_device_mode
     )
     message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
-    print(orange_text("***** SENT STOP COMMAND TO ZEKA! *****"))
-    response = zeka_request_response_cycle(message)
+    print("***** SENT " + red_text("STOP") + " COMMAND TO ZEKA! *****")
+    zeka_request_response_cycle(message)
 
 
 def reset_zeka_faults():
@@ -275,7 +269,7 @@ def reset_zeka_faults():
     )
     message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
     response = zeka_request_response_cycle(message)
-    print(orange_text("***** SENT RESET COMMAND TO ZEKA! *****"))
+    print("***** SENT " + red_text("RESET") + " COMMAND TO ZEKA! *****")
     return response
 
 
@@ -283,63 +277,23 @@ can_init()
 zeka_bus = can.thread_safe_bus.ThreadSafeBus(channel=zeka_can_channel, bustype=zeka_can_interface, bitrate=zeka_baud_rate)
 evi_bus = can.thread_safe_bus.ThreadSafeBus(channel=evi_can_channel, bustype=evi_can_interface, bitrate=evi_baud_rate)
 try:
+    if reset_zeka_faults() is None:
+        print(red_text("BLG initialization failed!"))
+        exit(1)
     stop_zeka_heartbeat = threading.Event()
     zeka_heartbeat_thread = threading.Thread(target=ZEKA_heartbeat, kwargs={'stop_psu_heartbeat': stop_zeka_heartbeat, 'verbose': True})
     zeka_heartbeat_thread.start()
     time.sleep(1)
-    start_zeka(voltage=435, current_a=1, current_b=2)
-    # if response is None:
-    #     print(red_text("BLG initialization failed!"))
-    #     exit(1)
-    # else:
-    #     print("SET STATUS ON STANDBY")
-    # time.sleep(8)
-    # data_bytes = zeka_control.assemble_main_control_command(
-    #     precharge_delay=False,
-    #     reset_faults=True,
-    #     full_stop=False,
-    #     run_device=True,
-    #     set_device_mode=zeka_control.ZekaDeviceModes.NO_MODE_SELECTED
-    # )
-    # message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
-    # response = zeka_request_response_cycle(message)
-    # if response is None:
-    #     print(red_text("BLG initialization failed!"))
-    #     exit(1)
-    # else:
-    #     print("SET STATUS ON POWER_ON")
-    # time.sleep(8)
-    # data_bytes = zeka_control.assemble_main_control_command(
-    #     precharge_delay=True,
-    #     reset_faults=True,
-    #     full_stop=False,
-    #     run_device=False,
-    #     set_device_mode=chosen_zeka_device_mode
-    # )
-    # message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
-    # response = zeka_request_response_cycle(message)
-    # if response is None:
-    #     print(red_text("BLG initialization failed!"))
-    #     exit(1)
-    # else:
-    #     print("SET STATUS TO CHARGING")
-    time.sleep(8)
-    stop_zeka()
-    time.sleep(8)
-    if reset_zeka_faults() is None:
-        print(red_text("BLG initialization failed!"))
-        exit(1)
+    # Si comincia ad ascoltare sull'EVI solo un secondo dopo l'avvio dello Zeka
     stop_evi_server = threading.Event()
     stop_evi_heartbeat = threading.Event()
-    time.sleep(1)
     evi_heartbeat_thread = threading.Thread(target=EVI_heartbeat, kwargs={'stop_evi_heartbeat': stop_evi_heartbeat, 'evi_bus': evi_bus})
-    evi_server_thread = threading.Thread(target=EVI_CAN_server, kwargs={'stop_evi_server': stop_evi_server, 'evi_bus': evi_bus, 'evi_heartbeat_thread': evi_heartbeat_thread})
+    evi_server_thread = threading.Thread(target=EVI_CAN_server, kwargs={'stop_evi_server': stop_evi_server, 'evi_bus': evi_bus})
     evi_heartbeat_thread.start()
     evi_server_thread.start()
     keyboard_interrupt = threading.Event()
     keyboard_interrupt.wait()
 except KeyboardInterrupt:
-    # # Chiudi la connessione CAN
     stop_zeka_heartbeat.set()
     stop_evi_server.set()
     stop_evi_heartbeat.set()

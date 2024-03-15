@@ -1,4 +1,5 @@
 
+from datetime import datetime, timedelta
 from enum import Enum
 
 from settings import (
@@ -8,7 +9,7 @@ from settings import (
     evi_BMPU_grid_max_power,
 )
 from status_dictionaries import evi_directives_dictionary
-from utilities import write_WORD
+from utilities import purple_text, write_WORD
 
 
 class EVIStates(Enum):
@@ -49,22 +50,35 @@ evi_grid_conf_translator = {
 }
 
 
-def assemble_x180(fault_detected, running_detected, ready_detected, precharging_detected, previously_faulted):
+def assemble_x180(fault_detected, running_detected, previously_faulted):
     if evi_directives_dictionary["pfc_mode_request"] is None or evi_directives_dictionary["grid_conf_request"] is None:
         return None
     if fault_detected is not None:
+        # In caso di fault, si restituisce fault
         evi_status = EVIStates.STATE_SAFE_D.value
     elif running_detected is not None:
+        # In caso di running, si restituisce charging
         evi_status = EVIStates.STATE_CHARGE.value
-    elif ready_detected is not None:
-        evi_status = EVIStates.STATE_POWER_ON.value
-    elif precharging_detected is not None:
+    else:
+        # In caso di precharging, si restituisce un valore fittizio sulla base di determinate condizioni
         if previously_faulted:
+            # Se era stato richiesto un fault ack, si restituisce fault ack
             evi_status = EVIStates.STATE_FAULT_ACK.value
         else:
-            evi_status = EVIStates.STATE_STANDBY.value
+            if (
+                (evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON or
+                 evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE)
+                and
+                (datetime.now() - evi_directives_dictionary["COMMAND_TIMESTAMP"] > timedelta(seconds=1))
+            ):
+                # Se era stato richiesto un precharging, si fa finta di averlo completato dopo un secondo
+                evi_status = EVIStates.STATE_POWER_ON.value
+            else:
+                # In tutti gli altri casi, si restituisce standby
+                evi_status = EVIStates.STATE_STANDBY.value
     DB0 = evi_status  # 0:3 bits are for system state
     DB1 = ((evi_directives_dictionary["grid_conf_request"] << 5) | (evi_directives_dictionary["pfc_mode_request"] << 3)) & 0xFF
+    print("REPORTING TO EVI WITH STATUS: " + purple_text(evi_status))
     return [DB0, DB1, 0, 0, 0, 0, 0, 0]
 
 
