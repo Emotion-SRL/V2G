@@ -1,6 +1,6 @@
 
-from datetime import datetime, timedelta
 import time
+from datetime import datetime, timedelta
 from enum import Enum
 
 from settings import (
@@ -68,7 +68,7 @@ def assemble_x180(fault_detected, running_detected, previously_faulted):
         if previously_faulted:
             # Se era stato richiesto un fault ack, si restituisce fault ack
             evi_status = EVIStates.STATE_FAULT_ACK.value
-        else: 
+        else:
             if (
                 (evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value or
                  evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE.value)
