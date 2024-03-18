@@ -141,12 +141,13 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                 if i_charge_limit != evi_directives_dictionary["i_charge_limit"]:
                     print("EVI updated I_CHARGE_LIMIT to: " + teal_text(i_charge_limit))
                     evi_directives_dictionary["i_charge_limit"] = i_charge_limit
+                    evi_directives_dictionary["UPDATE_REFERENCE"] = True
                     # changed = True
                 i_discharge_limit = read_UWORD(high_byte=DB[3], low_byte=DB[2], scale_factor=0.1)
                 if i_discharge_limit != evi_directives_dictionary["i_discharge_limit"]:
                     print("EVI updated I_DISCHARGE_LIMIT to: " + teal_text(i_discharge_limit))
                     evi_directives_dictionary["i_discharge_limit"] = i_discharge_limit
-                evi_directives_dictionary["UPDATE_REFERENCE"] = True
+                    evi_directives_dictionary["UPDATE_REFERENCE"] = True
                 #     changed = True
                 # if changed:
                 #     evi_directives_dictionary["UPDATE_REFERENCE"] = True
@@ -215,16 +216,15 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                 if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY.value:
                     stop_zeka()
                     evi_directives_dictionary["UPDATE_COMMAND"] = False
-                elif (
-                    (evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE.value or
-                     evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value)
-                ):
+                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value:
                     start_zeka(
                         voltage=evi_directives_dictionary["battery_voltage_setpoint"],
                         current_a=evi_directives_dictionary["i_charge_limit"],
                         current_b=evi_directives_dictionary["i_discharge_limit"]
                     )
                     # evi_directives_dictionary["UPDATE_REFERENCE"] = False
+                    evi_directives_dictionary["UPDATE_COMMAND"] = False
+                elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_CHARGE.value:
                     evi_directives_dictionary["UPDATE_COMMAND"] = False
                 elif evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_FAULT_ACK.value:
                     reset_zeka_faults()

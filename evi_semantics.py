@@ -1,5 +1,6 @@
 
 from datetime import datetime, timedelta
+import time
 from enum import Enum
 
 from settings import (
@@ -20,7 +21,7 @@ class EVIStates(Enum):
     STATE_SAFE_D = 4
     STATE_RESERVED = 5
     STATE_STOPPING = 6
-    STATE_FAULT_ACK = 7
+    STATE_FAULT_ACK = 8
 
 
 evi_state_word_translator = {
@@ -31,8 +32,8 @@ evi_state_word_translator = {
     4 : "STATE_SAFE_D (critical fault, system halted untill user action)",
     5 : "STATE_RESERVED (for future use)",
     6 : "STATE_STOPPING (converter is stopping and power is being killed off)",
-    7 : "STATE_FAULT_ACK (fault acknowledgement)",
-    8 : "??? STATE_FAULT_ACK (fault acknowledgement)"
+    8 : "STATE_FAULT_ACK (fault acknowledgement)",
+    7 : "??? STATE_FAULT_ACK (fault acknowledgement)"
 }
 
 evi_system_mode_translator = {
@@ -50,8 +51,10 @@ evi_grid_conf_translator = {
     4 : "CONF_THREE_PHASE_FOUR_WIRE (Three-phase configuration with neutral wire)"
 }
 
+print_count = 0
 
 def assemble_x180(fault_detected, running_detected, previously_faulted):
+    global print_count
     if evi_directives_dictionary["pfc_mode_request"] is None or evi_directives_dictionary["grid_conf_request"] is None:
         return None
     if fault_detected is not None:
@@ -79,7 +82,9 @@ def assemble_x180(fault_detected, running_detected, previously_faulted):
                 evi_status = EVIStates.STATE_STANDBY.value
     DB0 = evi_status  # 0:3 bits are for system state
     DB1 = ((evi_directives_dictionary["grid_conf_request"] << 5) | (evi_directives_dictionary["pfc_mode_request"] << 3)) & 0xFF
-    print("REPORTING TO EVI WITH STATUS: " + purple_text(evi_status) + " REQUEST WAS: " + purple_text(evi_directives_dictionary["pfc_state_request"]))
+    if print_count == 0:
+        print("REPORTING TO EVI WITH STATUS: " + purple_text(evi_status) + " REQUEST WAS: " + purple_text(evi_directives_dictionary["pfc_state_request"]))
+    print_count = (print_count + 1)%10
     return [DB0, DB1, 0, 0, 0, 0, 0, 0]
 
 
