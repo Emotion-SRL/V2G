@@ -184,7 +184,8 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                 data_bytes = assemble_x180(
                     fault_detected=fault_detected,
                     running_detected=running_detected,
-                    previously_faulted=previously_faulted
+                    previously_faulted=previously_faulted,
+                    ready_detected=ready_detected
                 )
                 if data_bytes is None:
                     continue
