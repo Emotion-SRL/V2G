@@ -13,8 +13,9 @@ evi_directives_dictionary = {
     "i_discharge_limit" : None,  # Current limit to Side B
     "UPDATE_COMMAND" : False,
     "UPDATE_REFERENCE" : False,
-    "COMMAND_TIMESTAMP": datetime.now(),
-    "CURRENT_SETPOINT_SENT": False
+    "INSULATION_TEST": False,
+    "COMMAND_TIMESTAMP": datetime.now()
+    # "CURRENT_SETPOINT_SENT": False
 }
 
 zeka_status_dictionary = {

@@ -214,6 +214,34 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                     current_b=evi_directives_dictionary["i_discharge_limit"]
                 )
                 evi_directives_dictionary["UPDATE_REFERENCE"] = False
+                if (
+                    evi_directives_dictionary["INSULATION_TEST"] and
+                    evi_directives_dictionary["battery_voltage_setpoint"] != 0
+                ):
+                    print(teal_text("***** ENDING INSULATION TEST *****"))
+                    evi_directives_dictionary["INSULATION_TEST"] = False
+                    command_zeka(
+                        argument="START",
+                        precharge_delay=True,
+                        reset_faults=False,
+                        full_stop=False,
+                        run_device=True,
+                        set_device_mode=chosen_zeka_device_mode
+                    )
+                if (
+                    evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value and
+                    evi_directives_dictionary["battery_voltage_setpoint"] == 0
+                ):
+                    print(teal_text("***** STARTING INSULATION TEST *****"))
+                    evi_directives_dictionary["INSULATION_TEST"] = True
+                    command_zeka(
+                        argument="INSULATION TEST",
+                        precharge_delay=True,
+                        reset_faults=False,
+                        full_stop=False,
+                        run_device=False,
+                        set_device_mode=chosen_zeka_device_mode
+                    )
             if evi_directives_dictionary["UPDATE_COMMAND"]:
                 if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY.value:
                     command_zeka(
@@ -232,7 +260,7 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                     #     reset_faults=False,
                     #     full_stop=False,
                     #     run_device=False,
-                    #     set_device_mode=zeka_control.ZekaDeviceModes.NO_MODE_SELECTED
+                    #     set_device_mode=chosen_zeka_device_mode
                     # )
                     # TODO VARIANTE 2 (precharging simulato)
                     command_zeka(
