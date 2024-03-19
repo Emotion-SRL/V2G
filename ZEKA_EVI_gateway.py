@@ -118,6 +118,8 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                     evi_directives_dictionary["UPDATE_COMMAND"] = True
                     evi_directives_dictionary["COMMAND_TIMESTAMP"] = datetime.now()
                     evi_directives_dictionary["pfc_state_request"] = pfc_state_request
+                    if pfc_state_request != EVIStates.STATE_POWER_ON.value:
+                        evi_directives_dictionary["INSULATION_TEST"] = False
                     # if pfc_state_request in [EVIStates.STATE_POWER_ON.value, EVIStates.STATE_CHARGE.value]:
                     #     evi_directives_dictionary["CURRENT_SETPOINT_SENT"] = False
                 pfc_mode_request = DB[1]
