@@ -210,40 +210,23 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                 evi_directives_dictionary["i_charge_limit"] is not None and
                 evi_directives_dictionary["i_discharge_limit"] is not None
             ):
-                update_zeka_references(
-                    voltage=evi_directives_dictionary["battery_voltage_setpoint"],
-                    current_a=evi_directives_dictionary["i_charge_limit"],
-                    current_b=evi_directives_dictionary["i_discharge_limit"]
-                )
-                evi_directives_dictionary["UPDATE_REFERENCE"] = False
                 if (
                     evi_directives_dictionary["INSULATION_TEST"] and
                     evi_directives_dictionary["battery_voltage_setpoint"] != 0
                 ):
-                    print(teal_text("***** ENDING INSULATION TEST *****"))
-                    evi_directives_dictionary["INSULATION_TEST"] = False
-                    command_zeka(
-                        argument="START",
-                        precharge_delay=True,
-                        reset_faults=False,
-                        full_stop=False,
-                        run_device=True,
-                        set_device_mode=chosen_zeka_device_mode
-                    )
-                if (
+                    end_insulation_test()
+                elif (
                     evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value and
                     evi_directives_dictionary["battery_voltage_setpoint"] == 0
                 ):
-                    print(teal_text("***** STARTING INSULATION TEST *****"))
-                    evi_directives_dictionary["INSULATION_TEST"] = True
-                    command_zeka(
-                        argument="INSULATION TEST",
-                        precharge_delay=True,
-                        reset_faults=False,
-                        full_stop=False,
-                        run_device=False,
-                        set_device_mode=chosen_zeka_device_mode
+                    begin_insulation_test()
+                else:
+                    update_zeka_references(
+                        voltage=evi_directives_dictionary["battery_voltage_setpoint"],
+                        current_a=evi_directives_dictionary["i_charge_limit"],
+                        current_b=evi_directives_dictionary["i_discharge_limit"]
                     )
+                    evi_directives_dictionary["UPDATE_REFERENCE"] = False
             if evi_directives_dictionary["UPDATE_COMMAND"]:
                 if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY.value:
                     command_zeka(
@@ -296,6 +279,42 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                     )
                 evi_directives_dictionary["UPDATE_COMMAND"] = False
     print(teal_text("EVI_CAN_server thread stopped"))
+
+
+def begin_insulation_test():
+    print(teal_text("***** STARTING INSULATION TEST *****"))
+    update_zeka_references(
+        voltage=10,
+        current_a=evi_directives_dictionary["i_charge_limit"],
+        current_b=evi_directives_dictionary["i_discharge_limit"]
+    )
+    # command_zeka(
+    #     argument="INSULATION TEST",
+    #     precharge_delay=True,
+    #     reset_faults=False,
+    #     full_stop=False,
+    #     run_device=False,
+    #     set_device_mode=chosen_zeka_device_mode
+    # )
+    evi_directives_dictionary["INSULATION_TEST"] = True
+
+
+def end_insulation_test():
+    print(teal_text("***** ENDING INSULATION TEST *****"))
+    update_zeka_references(
+        voltage=evi_directives_dictionary["battery_voltage_setpoint"],
+        current_a=evi_directives_dictionary["i_charge_limit"],
+        current_b=evi_directives_dictionary["i_discharge_limit"]
+    )
+    # command_zeka(
+    #     argument="START",
+    #     precharge_delay=True,
+    #     reset_faults=False,
+    #     full_stop=False,
+    #     run_device=True,
+    #     set_device_mode=chosen_zeka_device_mode
+    # )
+    evi_directives_dictionary["INSULATION_TEST"] = False
 
 
 def update_zeka_references(voltage, current_a, current_b):
