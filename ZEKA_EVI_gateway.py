@@ -226,7 +226,7 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                         current_a=evi_directives_dictionary["i_charge_limit"],
                         current_b=evi_directives_dictionary["i_discharge_limit"]
                     )
-                    evi_directives_dictionary["UPDATE_REFERENCE"] = False
+                evi_directives_dictionary["UPDATE_REFERENCE"] = False
             if evi_directives_dictionary["UPDATE_COMMAND"]:
                 if evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_STANDBY.value:
                     command_zeka(
@@ -318,6 +318,8 @@ def end_insulation_test():
 
 
 def update_zeka_references(voltage, current_a, current_b):
+    # current_a = current_a + 2
+    # current_b = current_b + 1
     data_bytes = (reference_control_function[chosen_zeka_device_mode])(
         voltage_reference=voltage,
         current_limit_to_side_A=current_a,
