@@ -33,7 +33,14 @@ from status_dictionaries import (
     zeka_status_dictionary,
     zeka_status_dictionary_lock,
 )
-from utilities import orange_text, purple_text, read_UWORD, red_text, teal_text
+from utilities import (
+    ReadWriteLock,
+    orange_text,
+    purple_text,
+    read_UWORD,
+    red_text,
+    teal_text,
+)
 
 chosen_zeka_device_mode = zeka_control.ZekaDeviceModes.BUCK_2Q_VOLTAGE_CONTROL_MODE
 
@@ -42,29 +49,30 @@ reference_control_function = {
     zeka_control.ZekaDeviceModes.BOOST_2Q_VOLTAGE_CONTROL_MODE : zeka_control.assemble_boost_2q_voltage_control_reference_command,
 }
 
-zeka_lock = threading.Lock()
+zeka_lock = ReadWriteLock()
 
 
 # spotted_evi_frames = set()
 
 
 def zeka_request_response_cycle(request):
-    with zeka_lock:
-        zeka_bus.send(request)
-        response = zeka_bus.recv(1)
-        if response is None:
-            print(red_text("**** ATTENTION: FAILED TO READ FROM ZEKA! ****"))
-            return None
-        if request.data[0] in [0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x8B, 0x90]:
-            if response.data != request.data:
-                print(red_text("**** ATTENTION: ZEKA DID NOT CORRECTLY RECEIVE COMMAND OF TYPE " + hex(request.data[0]) + " ****"))
-        return response.data
+    # with zeka_lock:
+    zeka_bus.send(request)
+    response = zeka_bus.recv(1)
+    if response is None:
+        print(red_text("**** ATTENTION: FAILED TO READ FROM ZEKA! ****"))
+        return None
+    if request.data[0] in [0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x8B, 0x90]:
+        if response.data != request.data:
+            print(red_text("**** ATTENTION: ZEKA DID NOT CORRECTLY RECEIVE COMMAND OF TYPE " + hex(request.data[0]) + " ****"))
+    return response.data
 
 
 def ZEKA_heartbeat(stop_psu_heartbeat, verbose=False):
     print(orange_text("ZEKA_heartbeat thread started"))
     while not stop_psu_heartbeat.is_set():
         with zeka_status_dictionary_lock:
+            zeka_lock.acquire_read()
             message = can.Message(arbitration_id=zeka_status.zeka_status_message_id, data=zeka_status.main_status_request, is_extended_id=False)
             response = zeka_request_response_cycle(message)
             if response is not None:
@@ -85,6 +93,7 @@ def ZEKA_heartbeat(stop_psu_heartbeat, verbose=False):
             response = zeka_request_response_cycle(message)
             if response is not None:
                 zeka_status.IOs_status_update(response)
+            zeka_lock.release_read()
             if verbose:
                 zeka_status.print_global_state()
         time.sleep(1)
@@ -132,9 +141,15 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                     evi_directives_dictionary["grid_conf_request"] = grid_conf_request
                 battery_voltage_setpoint = read_UWORD(high_byte=DB[7], low_byte=DB[6], scale_factor=0.1)
                 if battery_voltage_setpoint != evi_directives_dictionary["battery_voltage_setpoint"]:
+                    if (
+                        evi_directives_dictionary["INSULATION_TEST"] and
+                        evi_directives_dictionary["battery_voltage_setpoint"] != 0
+                    ):
+                        end_insulation_test(voltage=battery_voltage_setpoint, current_a=evi_directives_dictionary["i_charge_limit"], current_b=evi_directives_dictionary["i_discharge_limit"])
+                    else:
+                        evi_directives_dictionary["battery_voltage_setpoint"] = battery_voltage_setpoint
+                        evi_directives_dictionary["UPDATE_REFERENCE"] = True
                     print("EVI updated BATTERY_VOLTAGE_SETPOINT to: " + teal_text(battery_voltage_setpoint))
-                    evi_directives_dictionary["battery_voltage_setpoint"] = battery_voltage_setpoint
-                    evi_directives_dictionary["UPDATE_REFERENCE"] = True
             # ? PDO 2
             elif message.arbitration_id == 0x300 + evi_BMPU_ID:
                 DB = message.data
@@ -211,11 +226,6 @@ def EVI_CAN_server(stop_evi_server, evi_bus):
                 evi_directives_dictionary["i_discharge_limit"] is not None
             ):
                 if (
-                    evi_directives_dictionary["INSULATION_TEST"] and
-                    evi_directives_dictionary["battery_voltage_setpoint"] != 0
-                ):
-                    end_insulation_test()
-                elif (
                     evi_directives_dictionary["pfc_state_request"] == EVIStates.STATE_POWER_ON.value and
                     evi_directives_dictionary["battery_voltage_setpoint"] == 0
                 ):
@@ -299,12 +309,11 @@ def begin_insulation_test():
     evi_directives_dictionary["INSULATION_TEST"] = True
 
 
-def end_insulation_test():
-    print(teal_text("***** ENDING INSULATION TEST *****"))
+def end_insulation_test(voltage, current_a, current_b):
     update_zeka_references(
-        voltage=evi_directives_dictionary["battery_voltage_setpoint"],
-        current_a=evi_directives_dictionary["i_charge_limit"],
-        current_b=evi_directives_dictionary["i_discharge_limit"]
+        voltage=voltage,
+        current_a=current_a,
+        current_b=current_b
     )
     # command_zeka(
     #     argument="START",
@@ -315,18 +324,19 @@ def end_insulation_test():
     #     set_device_mode=chosen_zeka_device_mode
     # )
     evi_directives_dictionary["INSULATION_TEST"] = False
+    print(teal_text("***** ENDING INSULATION TEST *****"))
 
 
 def update_zeka_references(voltage, current_a, current_b):
-    # current_a = current_a + 2
-    # current_b = current_b + 1
     data_bytes = (reference_control_function[chosen_zeka_device_mode])(
         voltage_reference=voltage,
         current_limit_to_side_A=current_a,
         current_limit_to_side_B=current_b
     )
     psu_message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
+    zeka_lock.acquire_write()
     zeka_request_response_cycle(psu_message)
+    zeka_lock.release_write()
     print("*****" + " SENT " + red_text("REFERENCE") + " COMMAND TO ZEKA! Voltage: " + red_text(voltage) + " Cur_A: " + red_text(current_a) + " Cur_B: " + red_text(current_b) + "*****")
 
 
@@ -340,7 +350,9 @@ def command_zeka(argument, precharge_delay, reset_faults, full_stop, run_device,
     )
     message = can.Message(arbitration_id=zeka_control.zeka_control_message_id, data=data_bytes, is_extended_id=False)
     print("*****" + " SENT " + red_text(argument) + " COMMAND TO ZEKA! " + "*****")
+    zeka_lock.acquire_read()
     response = zeka_request_response_cycle(message)
+    zeka_lock.release_read()
     return response
 
 
